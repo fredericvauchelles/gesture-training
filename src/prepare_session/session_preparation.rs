@@ -7,7 +7,7 @@ use iced::widget::{button, radio, row, Row, text};
 use rfd::AsyncFileDialog;
 
 use crate::app::{AppWorkflow, Message, State, Workflow};
-use crate::run_session::WorkflowRunSession;
+use crate::run_session::{MessageRunSession, WorkflowRunSession};
 
 use super::session_configuration::{ImageTime, SessionConfiguration};
 
@@ -27,7 +27,8 @@ impl AppWorkflow for WorkflowPrepareSession {
             MessagePrepareSession::None => Command::none(),
             MessagePrepareSession::StartSession => {
                 state.current_workflow = Workflow::RunSession(WorkflowRunSession::new(&state.session_configuration, &state.session_prepared));
-                Command::none()
+                let future = async {};
+                Command::perform(future, |_| Message::RunSession(MessageRunSession::Play))
             }
             MessagePrepareSession::SetImageCount(value) => {
                 state.session_configuration.image_count = value;

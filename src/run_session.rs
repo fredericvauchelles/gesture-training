@@ -1,4 +1,5 @@
 use std::cmp::max;
+use std::io;
 use std::path::PathBuf;
 
 use iced::{Alignment, Command, Element};
@@ -11,6 +12,8 @@ use crate::prepare_session::session_preparation::{StatePreparedSession, Workflow
 #[derive(Default, Clone, Debug)]
 pub struct WorkflowRunSession {
     current_image_index: u8,
+    loaded_image_bytes: Option<Vec<u8>>,
+    loaded_image_index: u8,
     is_running: bool,
     remaining_seconds: u16,
     image_paths: Vec<PathBuf>,
@@ -22,14 +25,17 @@ impl AppWorkflow for WorkflowRunSession {
     fn view(&self, _state: &State) -> Element<Self::AppMessage> {
         let text_title = text("Gesture Training");
 
-        let image = image("");
+        let image = match &self.loaded_image_bytes {
+            None => image(""),
+            Some(bytes) => image(image::Handle::from_memory(bytes.clone())),
+        };
 
         let button_back = button("<").on_press(Message::RunSession(MessageRunSession::PreviousImage));
         let button_stop = button("Stop").on_press(Message::RunSession(MessageRunSession::Stop));
         let button_playpause = if self.is_running {
             button("Play").on_press(Message::RunSession(MessageRunSession::Pause))
         } else {
-            button("Pause").on_press(Message::RunSession(MessageRunSession::Resume))
+            button("Pause").on_press(Message::RunSession(MessageRunSession::Play))
         };
         let button_next = button(">").on_press(Message::RunSession(MessageRunSession::NextImage));
         let text_timeremaining = text(self.remaining_seconds.to_string());
@@ -50,7 +56,31 @@ impl AppWorkflow for WorkflowRunSession {
                     run_session.is_running = false;
                     Command::none()
                 }
-                MessageRunSession::Resume => {
+                MessageRunSession::Play => {
+                    run_session.is_running = false;
+
+                    if run_session.loaded_image_index == run_session.current_image_index && run_session.loaded_image_bytes.is_some() {
+                        // image is already loaded
+                        run_session.is_running = true;
+                        Command::none()
+                    } else {
+                        Command::perform(
+                            Self::load_image_at(run_session.current_image_index, run_session.image_paths.clone()),
+                            |bytes| {
+                                match bytes {
+                                    Ok(Some(bytes)) => Message::RunSession(MessageRunSession::ShowImage(bytes)),
+                                    Ok(None) => Message::None,
+                                    Err(error) => {
+                                        eprintln!("{}", error);
+                                        Message::None
+                                    }
+                                }
+                            },
+                        )
+                    }
+                }
+                MessageRunSession::ShowImage(bytes) => {
+                    run_session.loaded_image_bytes = Some(bytes);
                     run_session.is_running = true;
                     Command::none()
                 }
@@ -80,10 +110,22 @@ impl WorkflowRunSession {
         };
         Self {
             current_image_index: 0,
+            loaded_image_bytes: None,
+            loaded_image_index: 0,
             is_running: true,
             remaining_seconds,
             image_paths: session_prepared.valid_images.clone(),
         }
+    }
+
+    async fn load_image_at(index: u8, paths: Vec<PathBuf>) -> io::Result<Option<Vec<u8>>> {
+        if paths.is_empty() {
+            return Ok(None);
+        }
+        let safe_index = index % (paths.len() as u8);
+        let path = &paths[safe_index as usize];
+
+        async_fs::read(path).await.map(Some)
     }
 }
 
@@ -91,10 +133,11 @@ impl WorkflowRunSession {
 #[derive(Debug, Clone)]
 pub enum MessageRunSession {
     Pause,
-    Resume,
+    Play,
     Stop,
     NextImage,
     PreviousImage,
+    ShowImage(Vec<u8>),
 }
 
 impl Into<Message> for MessageRunSession {
