@@ -1,5 +1,6 @@
 use std::io;
 use std::path::{Path, PathBuf};
+use std::time::Instant;
 
 use iced::{Alignment, Command, Element};
 use iced::futures::TryStreamExt;
@@ -94,6 +95,10 @@ impl AppWorkflow for WorkflowPrepareSession {
             .padding(20)
             .align_items(Alignment::Center)
             .into()
+    }
+
+    fn tick(&mut self, instant: Instant) -> Command<Self::AppMessage> {
+        Command::none()
     }
 }
 

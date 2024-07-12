@@ -1,4 +1,6 @@
-use iced::{Application, Command, Element, executor, Theme};
+use std::time::{Duration, Instant};
+
+use iced::{Application, Command, Element, executor, Subscription, Theme, time};
 
 use crate::prepare_session::session_configuration::SessionConfiguration;
 use crate::prepare_session::session_preparation::{MessagePrepareSession, StatePreparedSession, WorkflowPrepareSession};
@@ -19,6 +21,7 @@ impl Default for Workflow {
 #[derive(Debug, Clone)]
 pub enum Message {
     None,
+    Tick(Instant),
     PrepareSession(MessagePrepareSession),
     RunSession(MessageRunSession),
 }
@@ -36,6 +39,7 @@ pub trait AppWorkflow {
 
     fn update(state: &mut State, message: Self::WorkflowMessage) -> Command<Self::AppMessage>;
     fn view(&self, state: &State) -> Element<Self::AppMessage>;
+    fn tick(&mut self, instant: Instant) -> Command<Self::AppMessage>;
 }
 
 impl Application for State {
@@ -48,16 +52,28 @@ impl Application for State {
         (Self::default(), Command::none())
     }
 
+    fn subscription(&self) -> Subscription<Self::Message> {
+        let tick = match self.current_workflow {
+            Workflow::PrepareSession(_) => Subscription::none(),
+            Workflow::RunSession(_) => time::every(Duration::from_millis(1000)).map(Message::Tick)
+        };
+
+        tick
+    }
+
     fn title(&self) -> String {
         String::from("Counter - Iced")
     }
 
     fn update(&mut self, message: Message) -> Command<Self::Message> {
-        let state = self;
         match message {
-            Message::PrepareSession(message) => WorkflowPrepareSession::update(state, message),
-            Message::RunSession(message) => WorkflowRunSession::update(state, message),
-            Message::None => Command::none()
+            Message::PrepareSession(message) => WorkflowPrepareSession::update(self, message),
+            Message::RunSession(message) => WorkflowRunSession::update(self, message),
+            Message::None => Command::none(),
+            Message::Tick(instant) => match &mut self.current_workflow {
+                Workflow::PrepareSession(workflow) => workflow.tick(instant),
+                Workflow::RunSession(workflow) => workflow.tick(instant),
+            }
         }
     }
 
