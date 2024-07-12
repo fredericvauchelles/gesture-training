@@ -1,6 +1,6 @@
 use std::io;
 use std::path::{Path, PathBuf};
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use iced::{Alignment, Command, Element};
 use iced::futures::TryStreamExt;
@@ -36,7 +36,7 @@ impl AppWorkflow for WorkflowPrepareSession {
                 Command::none()
             }
             MessagePrepareSession::SetImageTime(value) => {
-                state.session_configuration.image_time = ImageTime::FixedTime { seconds: value };
+                state.session_configuration.image_time = ImageTime::FixedTime(Duration::from_secs(value as u64));
                 Command::none()
             }
             MessagePrepareSession::SelectImageFolder => {
@@ -81,10 +81,10 @@ impl AppWorkflow for WorkflowPrepareSession {
             let amount = i * 5;
             radio(amount.to_string(), amount, Some(state.session_configuration.image_count), |_value| -> Message { MessagePrepareSession::SetImageCount(amount).into() })
         }).map(Element::from));
-        let radio_image_time = Row::with_children(([30, 60, 90, 120, 240, 600, 1200]).map(|i| {
+        let radio_image_time = Row::with_children(([5, 30, 60, 90, 120, 240, 600, 1200]).map(|i| {
             let amount = i;
             let selected = match state.session_configuration.image_time {
-                ImageTime::FixedTime { seconds } => Some(seconds),
+                ImageTime::FixedTime(duration) => Some(duration.as_secs() as u16),
                 ImageTime::NoLimit => None
             };
             radio(amount.to_string(), amount, selected, |_value| -> Message { MessagePrepareSession::SetImageTime(amount).into() })
@@ -97,7 +97,7 @@ impl AppWorkflow for WorkflowPrepareSession {
             .into()
     }
 
-    fn tick(&mut self, instant: Instant) -> Command<Self::AppMessage> {
+    fn tick(&mut self, _instant: Instant) -> Command<Self::AppMessage> {
         Command::none()
     }
 }

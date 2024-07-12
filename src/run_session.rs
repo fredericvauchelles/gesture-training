@@ -1,7 +1,7 @@
 use std::cmp::{max, min};
 use std::io;
 use std::path::PathBuf;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use iced::{Alignment, Command, Element};
 use iced::widget::{button, image, row, text};
@@ -22,14 +22,15 @@ impl Default for ImageIndex {
     }
 }
 
-#[derive(Default, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub struct WorkflowRunSession {
     image_path_history: Vec<usize>,
     next_image_index: ImageIndex,
     loaded_image_bytes: Option<Vec<u8>>,
     loaded_image_path_index: Option<usize>,
     is_running: bool,
-    remaining_milliseconds: usize,
+    remaining_time: Duration,
+    last_tick: Instant,
     image_paths: Vec<PathBuf>,
 }
 
@@ -52,7 +53,7 @@ impl AppWorkflow for WorkflowRunSession {
             button("Pause").on_press(Message::RunSession(MessageRunSession::Play))
         };
         let button_next = button(">").on_press(Message::RunSession(MessageRunSession::NextImage));
-        let text_timeremaining = text((self.remaining_milliseconds / 1000).to_string());
+        let text_timeremaining = text((self.remaining_time.as_secs()).to_string());
         let row_actionbar = row!(button_back, button_stop, button_playpause, button_next, text_timeremaining);
 
         iced::widget::column!(text_title, image, row_actionbar)
@@ -111,10 +112,11 @@ impl AppWorkflow for WorkflowRunSession {
                     run_session.loaded_image_bytes = Some(bytes);
                     run_session.loaded_image_path_index = Some(image_path_index);
                     run_session.is_running = true;
-                    run_session.remaining_milliseconds = match state.session_configuration.image_time {
-                        ImageTime::FixedTime { seconds } => seconds as usize,
-                        ImageTime::NoLimit => 3600
+                    run_session.remaining_time = match state.session_configuration.image_time {
+                        ImageTime::FixedTime(duration) => duration,
+                        ImageTime::NoLimit => Duration::from_secs(3600)
                     };
+                    run_session.last_tick = Instant::now();
                     Command::none()
                 }
                 MessageRunSession::Stop => { unreachable!() }
@@ -164,18 +166,22 @@ impl AppWorkflow for WorkflowRunSession {
     }
 
     fn tick(&mut self, instant: Instant) -> Command<Self::AppMessage> {
-        let elapsed = instant.elapsed().as_millis() as usize;
-        let elapsed_safe = min(elapsed, self.remaining_milliseconds);
-        self.remaining_milliseconds -= elapsed_safe;
-        Command::none()
+        let elapsed = instant - self.last_tick;
+        self.last_tick = instant;
+        if elapsed < self.remaining_time {
+            self.remaining_time -= elapsed;
+            Command::none()
+        } else {
+            Command::perform(async {}, |_| Message::RunSession(MessageRunSession::NextImage))
+        }
     }
 }
 
 impl WorkflowRunSession {
     pub fn new(session_configuration: &SessionConfiguration, session_prepared: &StatePreparedSession) -> Self {
-        let remaining_seconds = match session_configuration.image_time {
-            ImageTime::FixedTime { seconds } => seconds as usize,
-            ImageTime::NoLimit => 3600
+        let remaining_time = match session_configuration.image_time {
+            ImageTime::FixedTime(duration) => duration,
+            ImageTime::NoLimit => Duration::from_secs(3600)
         };
         Self {
             image_path_history: Vec::new(),
@@ -183,7 +189,8 @@ impl WorkflowRunSession {
             loaded_image_bytes: None,
             loaded_image_path_index: None,
             is_running: true,
-            remaining_milliseconds: remaining_seconds * 1000,
+            remaining_time,
+            last_tick: Instant::now(),
             image_paths: session_prepared.valid_images.clone(),
         }
     }

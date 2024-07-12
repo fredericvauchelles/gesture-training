@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::time::Duration;
 
 #[derive(Default, Clone, Debug)]
 pub struct ImageSelection {
@@ -7,14 +8,12 @@ pub struct ImageSelection {
 
 #[derive(Clone, Debug)]
 pub enum ImageTime {
-    FixedTime {
-        seconds: u16
-    },
+    FixedTime(Duration),
     NoLimit,
 }
 impl Default for ImageTime {
     fn default() -> Self {
-        Self::FixedTime { seconds: 30 }
+        Self::FixedTime(Duration::from_secs(30))
     }
 }
 
