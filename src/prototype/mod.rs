@@ -1,7 +1,12 @@
 use std::cmp::max;
-use std::path::PathBuf;
+use std::ffi::OsStr;
+use std::fs::{DirEntry, FileType};
+use std::io;
+use std::io::Error;
+use std::path::{Path, PathBuf};
 use iced::{Alignment, Application, Command, Element, executor, Theme};
 use iced::command::channel;
+use iced::futures::TryStreamExt;
 use iced::theme::Radio;
 use iced::widget::{button, text, column, image, text_input, radio, Row, row};
 use rfd::AsyncFileDialog;
@@ -46,14 +51,14 @@ struct ApplicationStateRunSession {
     remaining_seconds: u16,
 }
 impl ApplicationStateRunSession {
-    fn from(session_configuration: &SessionConfiguration) -> Self {
+    fn new(session_configuration: &SessionConfiguration, available_images: Vec<PathBuf>) -> Self {
         let remaining_seconds = match session_configuration.image_time {
             ImageTime::FixedTime { seconds } => seconds,
             ImageTime::NoLimit => 120
         };
         Self {
             current_image_index: 0,
-            available_images: Vec::new(),
+            available_images,
             is_running: true,
             remaining_seconds,
         }
@@ -78,7 +83,11 @@ pub struct ApplicationState {
 
 #[derive(Debug, Clone)]
 enum ApplicationMessagePrepareSession {
+    None,
     StartSession,
+    InitAndRunSession {
+        image_paths: Vec<PathBuf>
+    },
     SetImageCount(u8),
     SetImageTime(u16),
     SelectImageFolder,
@@ -110,7 +119,6 @@ pub enum ApplicationMessage {
     PrepareSession(ApplicationMessagePrepareSession),
     RunSession(ApplicationMessageRunSession),
 }
-
 
 impl Application for ApplicationState {
     type Executor = executor::Default;
@@ -194,9 +202,21 @@ impl ApplicationState {
 
     fn update_prepare_session(&mut self, message: ApplicationMessagePrepareSession) -> Command<ApplicationMessage> {
         match message {
-            ApplicationMessagePrepareSession::StartSession => {
-                self.current_workflow = ApplicationWorkflow::RunSession(ApplicationStateRunSession::from(&self.session_configuration));
+            ApplicationMessagePrepareSession::None => Command::none(),
+            ApplicationMessagePrepareSession::InitAndRunSession { image_paths } => {
+                self.current_workflow = ApplicationWorkflow::RunSession(ApplicationStateRunSession::new(&self.session_configuration, image_paths));
                 Command::none()
+            }
+            ApplicationMessagePrepareSession::StartSession => {
+                let future = find_image_files_in_directory(self.session_configuration.image_selection.folder_path.to_path_buf());
+                Command::perform(future, |results| {
+                    match results {
+                        Ok(image_paths) => {
+                            ApplicationMessage::PrepareSession(ApplicationMessagePrepareSession::InitAndRunSession { image_paths })
+                        }
+                        Err(_) => ApplicationMessage::PrepareSession(ApplicationMessagePrepareSession::None)
+                    }
+                })
             }
             ApplicationMessagePrepareSession::SetImageCount(value) => {
                 self.session_configuration.image_count = value;
@@ -252,5 +272,52 @@ impl ApplicationState {
         } else {
             unreachable!()
         }
+    }
+}
+
+
+const IMAGE_EXTENSIONS: &[&str] = &["jpg", "jpeg", "png", "bmp"];
+fn is_image_file(path: &Path) -> bool {
+    if let Some(extension) = path.extension().and_then(|ext| ext.to_str()) {
+        IMAGE_EXTENSIONS.contains(&extension)
+    } else { false }
+}
+async fn find_image_files_in_directory(path: PathBuf) -> io::Result<Vec<PathBuf>> {
+    match async_fs::read_dir(path).await {
+        Ok(mut read_dir) => {
+            let mut image_paths = Vec::new();
+            loop {
+                match read_dir.try_next().await {
+                    Ok(Some(entry)) => {
+                        if is_image_file(&entry.path()) {
+                            image_paths.push(entry.path())
+                        }
+                    }
+                    Err(error) => {
+                        eprintln!("{}", error);
+                        break;
+                    }
+                    Ok(None) => {
+                        break;
+                    }
+                }
+            }
+
+            Ok(image_paths)
+        }
+        Err(error) => {
+            eprintln!("{}", error);
+            Err(error)
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use std::path::Path;
+    use super::is_image_file;
+    #[test]
+    fn test_image_extension() {
+        assert!(is_image_file(&Path::new(&"test.jpg")));
     }
 }
