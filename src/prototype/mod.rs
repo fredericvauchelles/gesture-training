@@ -1,4 +1,4 @@
-use iced::{Alignment, Element, Sandbox};
+use iced::{Alignment, Application, Command, Element, executor, Theme};
 use iced::widget::{button, text, column, image};
 
 pub struct Counter {
@@ -11,18 +11,21 @@ pub enum Message {
     DecrementPressed,
 }
 
-impl Sandbox for Counter {
+impl Application for Counter {
+    type Executor = executor::Default;
     type Message = Message;
+    type Theme = Theme;
+    type Flags = ();
 
-    fn new() -> Self {
-        Self { value: 0 }
+    fn new(_flags: Self::Flags) -> (Self, Command<Self::Message>) {
+        (Self { value: 0 }, Command::none())
     }
 
     fn title(&self) -> String {
         String::from("Counter - Iced")
     }
 
-    fn update(&mut self, message: Message) {
+    fn update(&mut self, message: Message) -> Command<Self::Message> {
         match message {
             Message::IncrementPressed => {
                 self.value += 1;
@@ -31,17 +34,14 @@ impl Sandbox for Counter {
                 self.value -= 1;
             }
         }
+        Command::none()
     }
 
     fn view(&self) -> Element<Message> {
-        let image_bytes = std::fs::read("/home/frederic/Workspaces/Chanon_Small/Chanon_small001.jpg").unwrap();
-        let image_handle = image::Handle::from_memory(image_bytes);
-
         column![
             button("Increment").on_press(Message::IncrementPressed),
             text(self.value).size(50),
             button("Decrement").on_press(Message::DecrementPressed),
-            image(image_handle)
         ]
             .padding(20)
             .align_items(Alignment::Center)

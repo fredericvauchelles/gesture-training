@@ -1,7 +1,8 @@
-use iced::{Sandbox, Settings};
+use iced::{Settings, Application};
 
 mod prototype;
 
 fn main() -> iced::Result {
-    prototype::Counter::run(Settings::default())
+    let settings = Settings::with_flags(());
+    prototype::Counter::run(settings)
 }
