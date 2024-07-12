@@ -1,19 +1,32 @@
-use std::cmp::max;
+use std::cmp::{max, min};
 use std::io;
 use std::path::PathBuf;
 
 use iced::{Alignment, Command, Element};
 use iced::widget::{button, image, row, text};
+use rand::random;
 
 use crate::app::{AppWorkflow, Message, State, Workflow};
 use crate::prepare_session::session_configuration::{ImageTime, SessionConfiguration};
 use crate::prepare_session::session_preparation::{StatePreparedSession, WorkflowPrepareSession};
 
+#[derive(Clone, Debug)]
+enum ImageIndex {
+    BackwardHistoryIndex(usize),
+    PathIndex(usize),
+}
+impl Default for ImageIndex {
+    fn default() -> Self {
+        Self::PathIndex(0)
+    }
+}
+
 #[derive(Default, Clone, Debug)]
 pub struct WorkflowRunSession {
-    current_image_index: u8,
+    image_path_history: Vec<usize>,
+    next_image_index: ImageIndex,
     loaded_image_bytes: Option<Vec<u8>>,
-    loaded_image_index: u8,
+    loaded_image_path_index: Option<usize>,
     is_running: bool,
     remaining_seconds: u16,
     image_paths: Vec<PathBuf>,
@@ -59,16 +72,28 @@ impl AppWorkflow for WorkflowRunSession {
                 MessageRunSession::Play => {
                     run_session.is_running = false;
 
-                    if run_session.loaded_image_index == run_session.current_image_index && run_session.loaded_image_bytes.is_some() {
+                    let index_to_load = match run_session.next_image_index {
+                        ImageIndex::BackwardHistoryIndex(index) => {
+                            if run_session.image_path_history.is_empty() {
+                                None
+                            } else {
+                                let index = min(run_session.image_path_history.len() - 1, index);
+                                Some(run_session.image_path_history[run_session.image_path_history.len() - 1 - index])
+                            }
+                        }
+                        ImageIndex::PathIndex(index) => Some(index)
+                    };
+
+                    if run_session.loaded_image_path_index == index_to_load && run_session.loaded_image_bytes.is_some() {
                         // image is already loaded
                         run_session.is_running = true;
                         Command::none()
-                    } else {
+                    } else if let Some(index) = index_to_load {
                         Command::perform(
-                            Self::load_image_at(run_session.current_image_index, run_session.image_paths.clone()),
-                            |bytes| {
+                            Self::load_image_at(index, run_session.image_paths.clone()),
+                            move |bytes| {
                                 match bytes {
-                                    Ok(Some(bytes)) => Message::RunSession(MessageRunSession::ShowImage(bytes)),
+                                    Ok(Some(bytes)) => Message::RunSession(MessageRunSession::ShowImage(index, bytes)),
                                     Ok(None) => Message::None,
                                     Err(error) => {
                                         eprintln!("{}", error);
@@ -77,23 +102,59 @@ impl AppWorkflow for WorkflowRunSession {
                                 }
                             },
                         )
+                    } else {
+                        Command::none()
                     }
                 }
-                MessageRunSession::ShowImage(bytes) => {
+                MessageRunSession::ShowImage(image_path_index, bytes) => {
                     run_session.loaded_image_bytes = Some(bytes);
+                    run_session.loaded_image_path_index = Some(image_path_index);
                     run_session.is_running = true;
+                    run_session.remaining_seconds = match state.session_configuration.image_time {
+                        ImageTime::FixedTime { seconds } => seconds,
+                        ImageTime::NoLimit => 3600
+                    };
                     Command::none()
                 }
                 MessageRunSession::Stop => { unreachable!() }
                 MessageRunSession::NextImage => {
-                    let image_count = max(1u8, run_session.image_paths.len() as u8);
-                    run_session.current_image_index = (run_session.current_image_index + 1) % image_count;
-                    Command::none()
+                    match run_session.next_image_index {
+                        ImageIndex::BackwardHistoryIndex(backward_index) if backward_index > 0 => {
+                            run_session.next_image_index = ImageIndex::BackwardHistoryIndex(backward_index - 1);
+                        }
+                        _ => {
+                            let next_index = {
+                                let image_count = max(1usize, run_session.image_paths.len());
+                                let mut index = 0usize;
+                                for _ in 0..50 {
+                                    index = random::<usize>() % image_count;
+                                    if !run_session.image_path_history.contains(&index) {
+                                        break;
+                                    }
+                                }
+                                index
+                            };
+                            if let Some(index) = run_session.loaded_image_path_index {
+                                run_session.image_path_history.push(index);
+                            }
+                            run_session.next_image_index = ImageIndex::PathIndex(next_index);
+                        }
+                    }
+
+                    Command::perform(async {}, |_| Message::RunSession(MessageRunSession::Play))
                 }
                 MessageRunSession::PreviousImage => {
-                    let image_count = max(1u8, run_session.image_paths.len() as u8);
-                    run_session.current_image_index = (run_session.current_image_index + (image_count - 1)) % image_count;
-                    Command::none()
+                    match run_session.next_image_index {
+                        ImageIndex::BackwardHistoryIndex(backward_index) => {
+                            let new_index = min(backward_index + 1, run_session.image_path_history.len() - 1);
+                            run_session.next_image_index = ImageIndex::BackwardHistoryIndex(new_index);
+                        }
+                        ImageIndex::PathIndex(_) => {
+                            run_session.next_image_index = ImageIndex::BackwardHistoryIndex(0);
+                        }
+                    }
+
+                    Command::perform(async {}, |_| Message::RunSession(MessageRunSession::Play))
                 }
             }
         } else {
@@ -109,20 +170,21 @@ impl WorkflowRunSession {
             ImageTime::NoLimit => 120
         };
         Self {
-            current_image_index: 0,
+            image_path_history: Vec::new(),
+            next_image_index: ImageIndex::PathIndex(0),
             loaded_image_bytes: None,
-            loaded_image_index: 0,
+            loaded_image_path_index: None,
             is_running: true,
             remaining_seconds,
             image_paths: session_prepared.valid_images.clone(),
         }
     }
 
-    async fn load_image_at(index: u8, paths: Vec<PathBuf>) -> io::Result<Option<Vec<u8>>> {
+    async fn load_image_at(index: usize, paths: Vec<PathBuf>) -> io::Result<Option<Vec<u8>>> {
         if paths.is_empty() {
             return Ok(None);
         }
-        let safe_index = index % (paths.len() as u8);
+        let safe_index = index % (paths.len() as usize);
         let path = &paths[safe_index as usize];
 
         async_fs::read(path).await.map(Some)
@@ -137,7 +199,7 @@ pub enum MessageRunSession {
     Stop,
     NextImage,
     PreviousImage,
-    ShowImage(Vec<u8>),
+    ShowImage(usize, Vec<u8>),
 }
 
 impl Into<Message> for MessageRunSession {
