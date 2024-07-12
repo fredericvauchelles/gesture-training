@@ -1,8 +1,10 @@
-use iced::{Settings, Application};
+use iced::{Application, Settings};
 
-mod prototype;
+pub mod prepare_session;
+pub mod run_session;
+pub mod app;
 
 fn main() -> iced::Result {
     let settings = Settings::with_flags(());
-    prototype::ApplicationState::run(settings)
+    app::State::run(settings)
 }
