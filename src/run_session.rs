@@ -152,9 +152,9 @@ impl AppWorkflow for WorkflowRunSession {
         let button_back = button("<").on_press(Message::RunSession(MessageRunSession::PreviousImage));
         let button_stop = button("Stop").on_press(Message::RunSession(MessageRunSession::Stop));
         let button_playpause = if self.is_running {
-            button("Play").on_press(Message::RunSession(MessageRunSession::Pause))
+            button("Pause").on_press(Message::RunSession(MessageRunSession::Pause))
         } else {
-            button("Pause").on_press(Message::RunSession(MessageRunSession::Play))
+            button("Play").on_press(Message::RunSession(MessageRunSession::Play))
         };
         let button_next = button(">").on_press(Message::RunSession(MessageRunSession::NextImage));
         let text_timeremaining = text(format!("{}s", self.remaining_time.as_secs()))
@@ -177,6 +177,10 @@ impl AppWorkflow for WorkflowRunSession {
     fn tick(&mut self, instant: Instant) -> Command<Self::AppMessage> {
         let elapsed = instant - self.last_tick;
         self.last_tick = instant;
+        if !self.is_running {
+            return Command::none();
+        }
+
         if elapsed < self.remaining_time {
             self.remaining_time -= elapsed;
             Command::none()
