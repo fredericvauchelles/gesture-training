@@ -3,8 +3,8 @@ use std::io;
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
 
-use iced::{Alignment, Command, Element};
-use iced::widget::{button, image, row, text};
+use iced::{Alignment, Command, Element, Length, Padding};
+use iced::widget::{button, image, row, Space, text};
 use rand::random;
 
 use crate::app::{AppWorkflow, Message, State, Workflow};
@@ -142,12 +142,12 @@ impl AppWorkflow for WorkflowRunSession {
         }
     }
     fn view(&self, _state: &State) -> Element<Self::AppMessage> {
-        let text_title = text("Gesture Training");
-
         let image = match &self.loaded_image_bytes {
             None => image(""),
             Some(bytes) => image(image::Handle::from_memory(bytes.clone())),
-        };
+        }
+            .width(Length::Fill)
+            .height(Length::Fill);
 
         let button_back = button("<").on_press(Message::RunSession(MessageRunSession::PreviousImage));
         let button_stop = button("Stop").on_press(Message::RunSession(MessageRunSession::Stop));
@@ -157,12 +157,20 @@ impl AppWorkflow for WorkflowRunSession {
             button("Pause").on_press(Message::RunSession(MessageRunSession::Play))
         };
         let button_next = button(">").on_press(Message::RunSession(MessageRunSession::NextImage));
-        let text_timeremaining = text((self.remaining_time.as_secs()).to_string());
-        let row_actionbar = row!(button_back, button_stop, button_playpause, button_next, text_timeremaining);
-
-        col!(text_title, image, row_actionbar)
-            .padding(20)
+        let text_timeremaining = text(format!("{}s", self.remaining_time.as_secs()))
+            .width(Length::Fixed(50.0));
+        let space = Space::new(Length::Fill, Length::Shrink);
+        let space2 = Space::new(Length::Fill, Length::Shrink);
+        let row_actionbar = row!(space, button_back, button_stop, button_playpause, button_next, space2, text_timeremaining)
+            .width(Length::Fill)
+            .spacing(5)
             .align_items(Alignment::Center)
+            .padding(Padding::from([0, 10, 10, 10 + 50]));
+
+        col!(image, row_actionbar)
+            .align_items(Alignment::Center)
+            .width(Length::Fill)
+            .height(Length::Fill)
             .into()
     }
 
