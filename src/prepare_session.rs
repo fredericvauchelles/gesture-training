@@ -2,9 +2,11 @@ use std::io;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
-use iced::{Alignment, Command, Element};
+use iced::{Alignment, Command, Element, Length, Padding};
+use iced::alignment::Horizontal;
+use iced::Alignment::Start;
 use iced::futures::TryStreamExt;
-use iced::widget::{button, radio, row, Row, text};
+use iced::widget::{button, container, radio, row, Row, Space, text};
 use rfd::AsyncFileDialog;
 
 use crate::app::{AppWorkflow, Message, State, Workflow};
@@ -101,31 +103,65 @@ impl AppWorkflow for WorkflowPrepareSession {
         }
     }
     fn view(&self, state: &State) -> Element<Self::AppMessage> {
-        let text_title = text("Gesture Training");
+        let text_title = text("Gesture Training")
+            .width(Length::Fill)
+            .horizontal_alignment(Horizontal::Center)
+            .size(50);
+        let space = Space::new(Length::Fill, Length::Fill);
 
-        let text_folder_input = text("Image folder");
-        let text_folder_selected = text(state.session_configuration.image_selection.folder_path.to_string_lossy());
-        let button_choose_folder = button("Pick").on_press(Message::PrepareSession(MessagePrepareSession::SelectImageFolder));
-        let text_image_count = text(format!("({} images", state.session_prepared.valid_images.len()));
-        let row_folder_selector = row!(text_folder_input, text_folder_selected, button_choose_folder, text_image_count);
+        let text_folder_input_label = text("Image folder")
+            .width(Length::Fixed(150.0));
+        let text_folder_selected = text(state.session_configuration.image_selection.folder_path.to_string_lossy())
+            .width(Length::Fill);
+        let button_choose_folder = button("Pick")
+            .on_press(Message::PrepareSession(MessagePrepareSession::SelectImageFolder));
+        let text_image_count = text(format!("({} images)", state.session_prepared.valid_images.len()));
+        let row_folder_selector = row!(text_folder_input_label, text_folder_selected, button_choose_folder, text_image_count)
+            .align_items(Start)
+            .spacing(5)
+            .width(Length::Fill);
 
-        let radio_image_counts = Row::with_children((1..5u8).map(|i| {
+        let text_image_counts_label = text("Image Counts")
+            .width(Length::Fixed(150.0));
+        let radio_image_counts_items = (1..5u8).map(|i| {
             let amount = i * 5;
             radio(amount.to_string(), amount, Some(state.session_configuration.image_count), |_value| -> Message { MessagePrepareSession::SetImageCount(amount).into() })
-        }).map(Element::from));
-        let radio_image_time = Row::with_children(([5, 30, 60, 90, 120, 240, 600, 1200]).map(|i| {
+        }).map(Element::from);
+        let radio_image_counts = Row::with_children([Element::from(text_image_counts_label)].into_iter().chain(radio_image_counts_items))
+            .align_items(Alignment::Start)
+            .spacing(5)
+            .width(Length::Fill);
+
+        let text_duration_label = text("Duration")
+            .width(Length::Fixed(150.0));
+        let radio_duration_items = ([5, 30, 60, 90, 120, 240, 600, 1200]).map(|i| {
             let amount = i;
             let selected = match state.session_configuration.image_time {
                 ImageTime::FixedTime(duration) => Some(duration.as_secs() as u16),
                 ImageTime::NoLimit => None
             };
             radio(amount.to_string(), amount, selected, |_value| -> Message { MessagePrepareSession::SetImageTime(amount).into() })
-        }).map(Element::from));
-        let button_start = button("Start").on_press(Message::PrepareSession(MessagePrepareSession::StartSession));
+        }).map(Element::from);
+        let radio_duration = Row::with_children([Element::from(text_duration_label)].into_iter().chain(radio_duration_items))
+            .align_items(Alignment::Start)
+            .spacing(5)
+            .width(Length::Fill);
 
-        col!(text_title, row_folder_selector, radio_image_counts, radio_image_time, button_start)
+        let button_start = button(text("Start").width(Length::Fill).horizontal_alignment(Horizontal::Center))
+            .on_press(Message::PrepareSession(MessagePrepareSession::StartSession))
+            .width(Length::Fill);
+
+        let control_panel = container(col!(row_folder_selector, radio_image_counts, radio_duration, button_start)
             .padding(20)
+            .spacing(10)
             .align_items(Alignment::Center)
+        )
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .padding(Padding::from(50));
+
+        col!(text_title, space,  control_panel)
+            .padding(20)
             .into()
     }
 
