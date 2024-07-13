@@ -115,8 +115,7 @@ impl AppWorkflow for WorkflowPrepareSession {
             .width(Length::Fill);
         let button_choose_folder = button("Pick")
             .on_press(Message::PrepareSession(MessagePrepareSession::SelectImageFolder));
-        let text_image_count = text(format!("({} images)", state.session_prepared.valid_images.len()));
-        let row_folder_selector = row!(text_folder_input_label, text_folder_selected, button_choose_folder, text_image_count)
+        let row_folder_selector = row!(text_folder_input_label, text_folder_selected, button_choose_folder)
             .align_items(Start)
             .spacing(5)
             .width(Length::Fill);
@@ -147,7 +146,9 @@ impl AppWorkflow for WorkflowPrepareSession {
             .spacing(5)
             .width(Length::Fill);
 
-        let button_start = button(text("Start").width(Length::Fill).horizontal_alignment(Horizontal::Center))
+        let button_start = button(text(format!("Start ({} images)", state.session_prepared.valid_images.len()))
+            .width(Length::Fill)
+            .horizontal_alignment(Horizontal::Center))
             .on_press(Message::PrepareSession(MessagePrepareSession::StartSession))
             .width(Length::Fill);
 

@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use std::time::{Duration, Instant};
 
 use iced::{Alignment, Command, Element, Length, Padding};
-use iced::widget::{button, image, row, Space, text};
+use iced::widget::{button, image, Image, row, Space, text};
 use rand::random;
 
 use crate::app::{AppWorkflow, Message, State, Workflow};
@@ -149,14 +149,19 @@ impl AppWorkflow for WorkflowRunSession {
             .width(Length::Fill)
             .height(Length::Fill);
 
-        let button_back = button("<").on_press(Message::RunSession(MessageRunSession::PreviousImage));
-        let button_stop = button("Stop").on_press(Message::RunSession(MessageRunSession::Stop));
+        let button_back = button(Image::<image::Handle>::new("resources/icons-skip-to-start-90.png").width(30))
+            .on_press(Message::RunSession(MessageRunSession::PreviousImage));
+        let button_stop = button(Image::<image::Handle>::new("resources/icons-stop-90.png").width(30))
+            .on_press(Message::RunSession(MessageRunSession::Stop));
         let button_playpause = if self.is_running {
-            button("Pause").on_press(Message::RunSession(MessageRunSession::Pause))
+            button(Image::<image::Handle>::new("resources/icons-pause-90.png").width(30))
+                .on_press(Message::RunSession(MessageRunSession::Pause))
         } else {
-            button("Play").on_press(Message::RunSession(MessageRunSession::Play))
+            button(Image::<image::Handle>::new("resources/icons-play-90.png").width(30))
+                .on_press(Message::RunSession(MessageRunSession::Play))
         };
-        let button_next = button(">").on_press(Message::RunSession(MessageRunSession::NextImage));
+        let button_next = button(Image::<image::Handle>::new("resources/icons-end-90.png").width(30))
+            .on_press(Message::RunSession(MessageRunSession::NextImage));
         let text_timeremaining = text(format!("{}s", self.remaining_time.as_secs()))
             .width(Length::Fixed(50.0));
         let space = Space::new(Length::Fill, Length::Shrink);
