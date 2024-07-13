@@ -8,6 +8,7 @@ use iced::widget::{button, radio, row, Row, text};
 use rfd::AsyncFileDialog;
 
 use crate::app::{AppWorkflow, Message, State, Workflow};
+use crate::col;
 use crate::run_session::{MessageRunSession, WorkflowRunSession};
 
 #[derive(Default, Clone, Debug)]
@@ -122,7 +123,7 @@ impl AppWorkflow for WorkflowPrepareSession {
         }).map(Element::from));
         let button_start = button("Start").on_press(Message::PrepareSession(MessagePrepareSession::StartSession));
 
-        iced::widget::column!(text_title, row_folder_selector, radio_image_counts, radio_image_time, button_start)
+        col!(text_title, row_folder_selector, radio_image_counts, radio_image_time, button_start)
             .padding(20)
             .align_items(Alignment::Center)
             .into()

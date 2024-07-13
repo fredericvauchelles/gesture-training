@@ -8,6 +8,7 @@ use iced::widget::{button, image, row, text};
 use rand::random;
 
 use crate::app::{AppWorkflow, Message, State, Workflow};
+use crate::col;
 use crate::prepare_session::{ImageTime, SessionConfiguration};
 use crate::prepare_session::{StatePreparedSession, WorkflowPrepareSession};
 
@@ -35,32 +36,8 @@ pub struct WorkflowRunSession {
 }
 
 impl AppWorkflow for WorkflowRunSession {
-    type AppMessage = Message;
     type WorkflowMessage = MessageRunSession;
-    fn view(&self, _state: &State) -> Element<Self::AppMessage> {
-        let text_title = text("Gesture Training");
-
-        let image = match &self.loaded_image_bytes {
-            None => image(""),
-            Some(bytes) => image(image::Handle::from_memory(bytes.clone())),
-        };
-
-        let button_back = button("<").on_press(Message::RunSession(MessageRunSession::PreviousImage));
-        let button_stop = button("Stop").on_press(Message::RunSession(MessageRunSession::Stop));
-        let button_playpause = if self.is_running {
-            button("Play").on_press(Message::RunSession(MessageRunSession::Pause))
-        } else {
-            button("Pause").on_press(Message::RunSession(MessageRunSession::Play))
-        };
-        let button_next = button(">").on_press(Message::RunSession(MessageRunSession::NextImage));
-        let text_timeremaining = text((self.remaining_time.as_secs()).to_string());
-        let row_actionbar = row!(button_back, button_stop, button_playpause, button_next, text_timeremaining);
-
-        iced::widget::column!(text_title, image, row_actionbar)
-            .padding(20)
-            .align_items(Alignment::Center)
-            .into()
-    }
+    type AppMessage = Message;
     fn update(state: &mut State, message: Self::WorkflowMessage) -> Command<Self::AppMessage> {
         if let MessageRunSession::Stop = message {
             state.current_workflow = Workflow::PrepareSession(WorkflowPrepareSession::default());
@@ -163,6 +140,30 @@ impl AppWorkflow for WorkflowRunSession {
         } else {
             unreachable!()
         }
+    }
+    fn view(&self, _state: &State) -> Element<Self::AppMessage> {
+        let text_title = text("Gesture Training");
+
+        let image = match &self.loaded_image_bytes {
+            None => image(""),
+            Some(bytes) => image(image::Handle::from_memory(bytes.clone())),
+        };
+
+        let button_back = button("<").on_press(Message::RunSession(MessageRunSession::PreviousImage));
+        let button_stop = button("Stop").on_press(Message::RunSession(MessageRunSession::Stop));
+        let button_playpause = if self.is_running {
+            button("Play").on_press(Message::RunSession(MessageRunSession::Pause))
+        } else {
+            button("Pause").on_press(Message::RunSession(MessageRunSession::Play))
+        };
+        let button_next = button(">").on_press(Message::RunSession(MessageRunSession::NextImage));
+        let text_timeremaining = text((self.remaining_time.as_secs()).to_string());
+        let row_actionbar = row!(button_back, button_stop, button_playpause, button_next, text_timeremaining);
+
+        col!(text_title, image, row_actionbar)
+            .padding(20)
+            .align_items(Alignment::Center)
+            .into()
     }
 
     fn tick(&mut self, instant: Instant) -> Command<Self::AppMessage> {

@@ -6,6 +6,19 @@ use crate::prepare_session::{MessagePrepareSession, StatePreparedSession, Workfl
 use crate::prepare_session::SessionConfiguration;
 use crate::run_session::{MessageRunSession, WorkflowRunSession};
 
+/// Rexport iced:widget::column!
+/// Otherwise, RustRover confuses with another macro with the same name (stdlib-local-copy::column!)
+/// during code analysis and anything used inside is not detected as used
+#[macro_export]
+macro_rules! col {
+    () => (
+        iced::widget::Column::new()
+    );
+    ($($x:expr),+ $(,)?) => (
+        iced::widget::Column::with_children([$(iced::Element::from($x)),+])
+    );
+}
+
 #[derive(Clone, Debug)]
 pub enum Workflow {
     PrepareSession(WorkflowPrepareSession),
