@@ -179,33 +179,41 @@ impl WorkflowPrepareSession {
         } else { false }
     }
     async fn find_image_files_in_directory(path: &Path) -> io::Result<Vec<PathBuf>> {
-        match async_fs::read_dir(path).await {
-            Ok(mut read_dir) => {
-                let mut image_paths = Vec::new();
-                loop {
-                    match read_dir.try_next().await {
-                        Ok(Some(entry)) => {
-                            if Self::is_image_file(&entry.path()) {
-                                image_paths.push(entry.path())
+        let mut paths = vec![path.to_path_buf()];
+        let mut image_paths = Vec::new();
+        while let Some(current_path) = paths.pop() {
+            match async_fs::read_dir(current_path).await {
+                Ok(mut read_dir) => {
+                    loop {
+                        match read_dir.try_next().await {
+                            Ok(Some(entry)) => {
+                                if Self::is_image_file(&entry.path()) {
+                                    image_paths.push(entry.path())
+                                } else {
+                                    if let Ok(entry_type) = entry.file_type().await {
+                                        if entry_type.is_dir() {
+                                            paths.push(entry.path().to_path_buf())
+                                        }
+                                    }
+                                }
                             }
-                        }
-                        Err(error) => {
-                            eprintln!("{}", error);
-                            break;
-                        }
-                        Ok(None) => {
-                            break;
+                            Err(error) => {
+                                eprintln!("{}", error);
+                                break;
+                            }
+                            Ok(None) => {
+                                break;
+                            }
                         }
                     }
                 }
-
-                Ok(image_paths)
-            }
-            Err(error) => {
-                eprintln!("{}", error);
-                Err(error)
+                Err(error) => {
+                    eprintln!("{}", error);
+                    return Err(error);
+                }
             }
         }
+        Ok(image_paths)
     }
     async fn compute_new_prepared_session(session_configuration: SessionConfiguration) -> io::Result<StatePreparedSession> {
         let valid_images = Self::find_image_files_in_directory(&session_configuration.image_selection.folder_path).await?;
