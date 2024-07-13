@@ -8,8 +8,8 @@ use iced::widget::{button, image, row, text};
 use rand::random;
 
 use crate::app::{AppWorkflow, Message, State, Workflow};
-use crate::prepare_session::session_configuration::{ImageTime, SessionConfiguration};
-use crate::prepare_session::session_preparation::{StatePreparedSession, WorkflowPrepareSession};
+use crate::prepare_session::{ImageTime, SessionConfiguration};
+use crate::prepare_session::{StatePreparedSession, WorkflowPrepareSession};
 
 #[derive(Clone, Debug)]
 enum ImageIndex {

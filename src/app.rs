@@ -2,8 +2,8 @@ use std::time::{Duration, Instant};
 
 use iced::{Application, Command, Element, executor, Subscription, Theme, time};
 
-use crate::prepare_session::session_configuration::SessionConfiguration;
-use crate::prepare_session::session_preparation::{MessagePrepareSession, StatePreparedSession, WorkflowPrepareSession};
+use crate::prepare_session::{MessagePrepareSession, StatePreparedSession, WorkflowPrepareSession};
+use crate::prepare_session::SessionConfiguration;
 use crate::run_session::{MessageRunSession, WorkflowRunSession};
 
 #[derive(Clone, Debug)]
