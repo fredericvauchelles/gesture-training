@@ -54,7 +54,9 @@ impl AppWorkflow for WorkflowRunSession {
         match message {
             MessageRunSession::Initialize(workflow) => {
                 state.current_workflow = Workflow::RunSession(workflow);
-                Command::perform(async {}, |_| Message::RunSession(MessageRunSession::Play))
+                Command::perform(async {}, |_| {
+                    Message::RunSession(MessageRunSession::ShowImage(0, None))
+                })
             }
             MessageRunSession::Stop => {
                 state.current_workflow =
@@ -78,7 +80,7 @@ impl AppWorkflow for WorkflowRunSession {
                             run_session.remaining_time = run_session.duration;
                             run_session.last_tick = Instant::now();
 
-                            let mut image = &mut run_session.images[run_session.image_index];
+                            let image = &mut run_session.images[run_session.image_index];
 
                             if image.bytes.is_none() {
                                 if let Some(bytes) = bytes {
@@ -143,7 +145,9 @@ impl AppWorkflow for WorkflowRunSession {
             }
         } else {
             image("")
-        };
+        }
+        .width(Length::Fill)
+        .height(Length::Fill);
 
         let button_back =
             button(Image::<image::Handle>::new("resources/icons-skip-to-start-90.png").width(30))
@@ -183,6 +187,7 @@ impl AppWorkflow for WorkflowRunSession {
             .align_items(Alignment::Center)
             .width(Length::Fill)
             .height(Length::Fill)
+            .spacing(5)
             .into()
     }
 
