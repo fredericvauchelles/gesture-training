@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use std::time::{Duration, Instant};
 
 use iced::{Alignment, Command, Element, Length, Padding};
-use iced::widget::{button, image, Image, row, Space, text};
+use iced::widget::{button, image, row, Space, text};
 use rand::random;
 
 use crate::app::{AppWorkflow, Message, State, Workflow};
@@ -119,7 +119,7 @@ impl AppWorkflow for WorkflowRunSession {
         }
     }
     fn view(&self, _state: &State) -> Element<Self::AppMessage> {
-        let image = if self.image_index < self.images.len() {
+        let gesture_image = if self.image_index < self.images.len() {
             match self.images[self.image_index].bytes.clone() {
                 None => image(""),
                 Some(bytes) => image(image::Handle::from_memory(bytes)),
@@ -130,22 +130,49 @@ impl AppWorkflow for WorkflowRunSession {
         .width(Length::Fill)
         .height(Length::Fill);
 
-        let button_back =
-            button(Image::<image::Handle>::new("resources/icons-skip-to-start-90.png").width(30))
-                .on_press(Message::RunSession(MessageRunSession::PreviousImage));
-        let button_stop =
-            button(Image::<image::Handle>::new("resources/icons-stop-90.png").width(30))
-                .on_press(Message::RunSession(MessageRunSession::Stop));
+        let button_back = button(
+            image(image::Handle::from_memory(include_bytes!(
+                "../resources/icons-skip-to-start-90.png"
+            )))
+            .width(30)
+            .height(30),
+        )
+        .on_press(Message::RunSession(MessageRunSession::PreviousImage));
+        let button_stop = button(
+            image(image::Handle::from_memory(include_bytes!(
+                "../resources/icons-stop-90.png"
+            )))
+            .width(30)
+            .height(30),
+        )
+        .on_press(Message::RunSession(MessageRunSession::Stop));
         let button_playpause = if self.is_running {
-            button(Image::<image::Handle>::new("resources/icons-pause-90.png").width(30))
-                .on_press(Message::RunSession(MessageRunSession::Pause))
+            button(
+                image(image::Handle::from_memory(include_bytes!(
+                    "../resources/icons-pause-90.png"
+                )))
+                .width(30)
+                .height(30),
+            )
+            .on_press(Message::RunSession(MessageRunSession::Pause))
         } else {
-            button(Image::<image::Handle>::new("resources/icons-play-90.png").width(30))
-                .on_press(Message::RunSession(MessageRunSession::Play))
+            button(
+                image(image::Handle::from_memory(include_bytes!(
+                    "../resources/icons-play-90.png"
+                )))
+                .width(30)
+                .height(30),
+            )
+            .on_press(Message::RunSession(MessageRunSession::Play))
         };
-        let button_next =
-            button(Image::<image::Handle>::new("resources/icons-end-90.png").width(30))
-                .on_press(Message::RunSession(MessageRunSession::NextImage));
+        let button_next = button(
+            image(image::Handle::from_memory(include_bytes!(
+                "../resources/icons-end-90.png"
+            )))
+            .width(30)
+            .height(30),
+        )
+        .on_press(Message::RunSession(MessageRunSession::NextImage));
         let text_timeremaining =
             text(format!("{}s", self.remaining_time.as_secs())).width(Length::Fixed(50.0));
         let space = Space::new(Length::Fill, Length::Shrink);
@@ -164,7 +191,7 @@ impl AppWorkflow for WorkflowRunSession {
         .align_items(Alignment::Center)
         .padding(Padding::from([0, 10, 10, 10 + 50]));
 
-        col!(image, row_actionbar)
+        col!(gesture_image, row_actionbar)
             .align_items(Alignment::Center)
             .width(Length::Fill)
             .height(Length::Fill)
@@ -202,7 +229,6 @@ impl WorkflowRunSession {
 
         // predetermine all images for the session
         let images = (0..session_configuration.image_count)
-            .into_iter()
             .map(|_| random::<usize>() % session_prepared.valid_images.len())
             .map(|index| session_prepared.valid_images[index].clone())
             .map(|path| ImageInMemory { path, bytes: None })
