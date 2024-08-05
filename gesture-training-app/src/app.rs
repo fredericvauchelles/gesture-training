@@ -75,7 +75,7 @@ impl Application for State {
     }
 
     fn title(&self) -> String {
-        String::from("Counter - Iced")
+        String::from("Gesture Training")
     }
 
     fn update(&mut self, message: Message) -> Command<Self::Message> {
