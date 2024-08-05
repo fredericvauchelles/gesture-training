@@ -1,4 +1,4 @@
 /target/
 
-.vtune
-.flatpak-builder
+.vtune/
+.flatpak-builder/
