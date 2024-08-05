@@ -1,2 +1,3 @@
-/target
-/vtune/
+**/target
+**/vtune/
+**/.flatpak-builder
