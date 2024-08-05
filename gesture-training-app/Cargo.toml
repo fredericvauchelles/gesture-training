@@ -1,0 +1,11 @@
+[package]
+name = "gesture_training"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+iced = { version = "0.12.1", features = ["image", "async-std"] }
+rfd = "0.14.1"
+async-fs = "2.1.2"
+rand = "0.8.5"
+futures = "0.3.30"

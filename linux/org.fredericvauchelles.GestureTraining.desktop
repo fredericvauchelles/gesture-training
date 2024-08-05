@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Gesture Training
+Exec=gesture_training
+Icon=org.fredericvauchelles.GestureTraining
+Version=1.0
+Type=Application
+Categories=Art
+Terminal=false

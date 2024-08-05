@@ -18,25 +18,6 @@ pub struct ImageInMemory {
     path: PathBuf,
 }
 
-impl ImageInMemory {
-    async fn get_or_load_image(&mut self) -> Option<&[u8]> {
-        if self.bytes.is_some() {
-            return Some(&self.bytes.as_ref().unwrap());
-        }
-
-        match async_fs::read(&self.path).await {
-            Ok(bytes) => {
-                self.bytes = Some(bytes);
-                Some(&self.bytes.as_ref().unwrap())
-            }
-            Err(error) => {
-                eprintln!("{}", error);
-                None
-            }
-        }
-    }
-}
-
 #[derive(Clone, Debug)]
 pub struct WorkflowRunSession {
     image_index: usize,
