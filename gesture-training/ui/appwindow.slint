@@ -1,0 +1,41 @@
+import { Button, VerticalBox, StandardListView, HorizontalBox } from "std-widgets.slint";
+
+component RadioBox inherits HorizontalBox {
+    in-out property title <=> title.text;
+    height: 75px;
+    title := Text {
+        width: 75px;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+}
+
+export component AppWindow inherits Window {
+    title: "Gesture Training";
+    VerticalBox {
+        padding: 10% * parent.width;
+        list := StandardListView {
+
+        }
+        Button {
+            text: "Add Source";
+        }
+        RadioBox {
+            title: "Images";
+            for data in [5, 10, 15, 20, 25] : Button {
+                text: data;
+            }
+        }
+        RadioBox {
+            title: "Time";
+            for data in [30, 60, 90, 120, 180] : Button {
+                text: data;
+            }
+        }
+        HorizontalBox {
+            Button {
+                text: "Start";
+            }
+        }
+    }
+}
