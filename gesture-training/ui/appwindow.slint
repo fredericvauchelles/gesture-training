@@ -20,6 +20,7 @@ struct ThemeWidgetInput {
     label-color: color,
     value-background-color: color,
     value-color: color,
+    height: length,
 }
 
 struct ThemeButtonState {
@@ -59,7 +60,7 @@ global Themes {
             label-color: #ffffff,
             value-background-color: #121212,
             value-color: #ffffff,
-
+            height: 50px,
         },
         button: {
             normal: {
@@ -89,12 +90,113 @@ component WidgetBackgroundRectangle inherits Rectangle {
     border-color: Themes.theme.widget.border-color;
 }
 
+enum ThemeButtonShape {
+    Full,
+    Left,
+    Right,
+    None
+}
+
+component ThemeButton inherits Rectangle {
+    in property<ThemeButtonShape> shape: ThemeButtonShape.Full;
+
+    in-out property icon <=> image.source;
+    in-out property text <=> text.text;
+
+    callback clicked <=> touch.clicked;
+
+    min-height: Themes.theme.widget-input.height;
+
+    background: Themes.theme.button.normal.background;
+    border-top-left-radius: shape == ThemeButtonShape.Full || shape == ThemeButtonShape.Left 
+        ? Themes.theme.widget.border-radius
+        : 0px;
+    border-bottom-left-radius: shape == ThemeButtonShape.Full || shape == ThemeButtonShape.Left 
+        ? Themes.theme.widget.border-radius
+        : 0px;
+    border-top-right-radius: shape == ThemeButtonShape.Full || shape == ThemeButtonShape.Right 
+        ? Themes.theme.widget.border-radius
+        : 0px;
+    border-bottom-right-radius: shape == ThemeButtonShape.Full || shape == ThemeButtonShape.Right 
+        ? Themes.theme.widget.border-radius
+        : 0px;
+    
+    image := Image {
+        width: parent.width * 0.8;
+        height: parent.height * 0.8;
+        colorize: Themes.theme.button.normal.color;
+    } 
+    text := Text { 
+        color: Themes.theme.button.normal.color;
+    }
+    touch := TouchArea {}
+
+    states [
+        hover when touch.pressed: { 
+            background: Themes.theme.button.pressed.background;
+            image.colorize: Themes.theme.button.pressed.color;
+        }
+        hover when touch.has-hover: {
+            background: Themes.theme.button.hover.background;
+            image.colorize: Themes.theme.button.hover.color;
+        }
+    ]
+}
+
+component ThemeToggle inherits Rectangle {
+    in property<ThemeButtonShape> shape: ThemeButtonShape.Full;
+
+    in-out property icon <=> image.source;
+    in-out property text <=> text.text;
+
+    callback clicked <=> touch.clicked;
+
+    min-height: Themes.theme.widget-input.height;
+
+    background: Themes.theme.button.normal.background;
+    border-top-left-radius: shape == ThemeButtonShape.Full || shape == ThemeButtonShape.Left 
+        ? Themes.theme.widget.border-radius
+        : 0px;
+    border-bottom-left-radius: shape == ThemeButtonShape.Full || shape == ThemeButtonShape.Left 
+        ? Themes.theme.widget.border-radius
+        : 0px;
+    border-top-right-radius: shape == ThemeButtonShape.Full || shape == ThemeButtonShape.Right 
+        ? Themes.theme.widget.border-radius
+        : 0px;
+    border-bottom-right-radius: shape == ThemeButtonShape.Full || shape == ThemeButtonShape.Right 
+        ? Themes.theme.widget.border-radius
+        : 0px;
+    
+    image := Image {
+        width: parent.width * 0.8;
+        height: parent.height * 0.8;
+        colorize: Themes.theme.button.normal.color;
+    } 
+    text := Text { 
+        color: Themes.theme.button.normal.color;
+    }
+    touch := TouchArea {}
+
+    states [
+        hover when touch.pressed: { 
+            background: Themes.theme.button.pressed.background;
+            image.colorize: Themes.theme.button.pressed.color;
+        }
+        hover when touch.has-hover: {
+            background: Themes.theme.button.hover.background;
+            image.colorize: Themes.theme.button.hover.color;
+        }
+    ]
+}
+
 component LabelField inherits HorizontalBox {
     in-out property title <=> title.text;
     spacing: 0;
     
     Rectangle { 
         width: 100px;
+        min-height: Themes.theme.widget-input.height;
+        
         background: Themes.theme.widget-input.label-background-color;
         border-top-left-radius: Themes.theme.widget.border-radius;
         border-bottom-left-radius: Themes.theme.widget.border-radius;
@@ -111,35 +213,14 @@ component LabelField inherits HorizontalBox {
 
 component RadioBox inherits LabelField {
     in property<[{value: int, display: string}]> datas;
-    for data[index] in datas : Button {
+    in-out property<int> selected-value;
+
+    for data[index] in datas : ThemeButton {
+        shape: index < datas.length - 1 
+            ? ThemeButtonShape.None 
+            : ThemeButtonShape.Right;
         text: data.display;
     } 
-}
-
-enum ThemeButtonShape {
-    Full,
-    Left,
-    Right
-}
-component ThemeButton inherits Rectangle {
-    in property<ThemeButtonShape> shape: ThemeButtonShape.Full;
-
-    in-out property icon <=> image.source;
-    in-out property text <=> text.text;
-
-    callback clicked <=> touch.clicked;
-
-    height: text.preferred-height * 1.33;
-    min-width: text.preferred-width + 20px;
-
-    background: touch.pressed ? #6b8282 : touch.has-hover ? #6c616c :  #456;
-    
-    image := Image {
-        width: parent.width;
-        height: parent.height;
-    } 
-    text := Text { }
-    touch := TouchArea {}
 }
 
 component CustomDialog inherits Window {
@@ -239,11 +320,13 @@ component MainMenu inherits VerticalBox {
                 title: "Add Source";
         
                 button_add_folder := ThemeButton {
+                    shape: ThemeButtonShape.None;
                     icon: @image-url("icons/folder.svg");
                     width: 50px;
                     height: 50px;
                 }
-                button_add_zip := Button {
+                button_add_zip := ThemeButton {
+                    shape: ThemeButtonShape.Right;
                     icon: @image-url("icons/document-zip.svg");
                     width: 50px;
                     height: 50px;
@@ -281,7 +364,7 @@ component MainMenu inherits VerticalBox {
     }
     
     HorizontalBox {
-        Button {
+        ThemeButton {
             text: "Start";
         }
     }
