@@ -1,0 +1,44 @@
+import { Button, VerticalBox, StandardListView, HorizontalBox, Palette, StyleMetrics } from "std-widgets.slint";
+import { MainMenu } from "main-menu.slint";
+import { RadioBox, AddFolderDialog, CustomStyleMetrics } from "../widgets/widgets.slint";
+
+export component ModalDialogLayer inherits Window {
+    visible: false;
+    Rectangle {
+        opacity: 0.9;
+    }
+    VerticalBox {
+        alignment: center;
+        x: 5% * root.width;
+        width: 90% * root.width;
+        min-height: 100px;
+
+        dialog_add_folder := AddFolderDialog { 
+            cancel => { close-modal(); } 
+        } 
+    }
+
+    function close-modal() {
+        self.visible = false;
+
+        dialog_add_folder.visible = false;
+    }
+
+    public function show-add-folder() {
+        self.visible = true; 
+
+        dialog_add_folder.show();
+    }
+}
+
+export component AppWindow inherits Window {
+    title: "Gesture Training";
+    Rectangle { }
+    MainMenu {
+        show-add-folder => { layer_modal.show-add-folder(); }
+    } 
+    layer_modal := ModalDialogLayer {
+        width: root.width;
+        height: root.height;
+    }
+}

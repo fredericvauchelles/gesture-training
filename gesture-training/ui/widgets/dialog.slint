@@ -1,0 +1,13 @@
+import { Palette, StyleMetrics, VerticalBox } from "std-widgets.slint";
+
+export component CustomDialog inherits Window { 
+    callback accept;
+    callback cancel;
+    Rectangle {
+        background: white;
+    }
+
+    public function show() {
+        self.visible = true;
+    }
+}
