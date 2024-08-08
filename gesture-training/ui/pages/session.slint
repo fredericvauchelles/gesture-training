@@ -1,72 +1,145 @@
-import { Button, VerticalBox, HorizontalBox, Palette, Slider, StyleMetrics } from "std-widgets.slint";
+import { VerticalBox, HorizontalBox, Palette, Slider, StyleMetrics } from "std-widgets.slint";
+import { CustomPalette, Icons, Button } from "../widgets/widgets.slint";
 
 component Timer inherits Rectangle {
-    in property<length> size: 50px;
-    in property<float> progress: 0;
+    in property<int> time_left: 0;
+    in property<int> time_total: 90;
+    in-out property<bool> is_playing: false;
 
-    width: size;
-    height: size;
+    in property<length> timer_width: 80px;
+    in property<length> button_width: 40px;
 
-    // Path {
-    //     x: 0;
-    //     y: 0;
+    pure callback seconds_to_string(int) -> string;
 
-    //     fill: Palette.alternate-background;
-    //     stroke: Palette.background.darker(25%);
-    //     stroke-width: 1px;
-    //     MoveTo { x: 0; y: 0; }
-    //     ArcTo { 
-    //         radius-x: 1;
-    //         radius-y: 1;
-    //         x: 0; y: size / 1px; 
-    //     }
-    //     ArcTo { 
-    //         radius-x: 1;
-    //         radius-y: 1;
-    //         x: 0; y: 0; 
-    //     }
-    // }
+    width: timer_width + 2 * button_width;
+    height: 50px;
 
-    Path {
-        fill: Palette.alternate-background;
-        MoveTo { x: 100; y: 100; }
-        LineTo { x: -100; y: 100; }
-        LineTo { x: -100; y: -100; }
-        LineTo { x: 100; y: -100; }
-        LineTo { x: 100; y: 100; }
-    }
+    Rectangle {
+        background: Palette.alternate-background;
+        border-top-left-radius: CustomPalette.border;
+        border-top-right-radius: CustomPalette.border;
+        border-width: 1px;
+        border-color: Palette.background.darker(25%);
+        clip: true;
 
-    Path {
-        fill: Palette.foreground;
-        MoveTo { x: 0; y: 0; }
-        // ArcTo {
-        //     large-arc: root.progress >= 50%;
-        //     x: cos(root.progress * 360deg) * ((size - 10px) / 1px); 
-        //     y: sin(root.progress * 360deg) * ((size - 10px) / 1px); 
-        //     radius-x: 1;
-        //     radius-y: 1;
-        // }
-        LineTo { 
-            x: cos(root.progress * 360deg) * 100; 
-            y: sin(root.progress * 360deg) * 100; 
+        width: 100%;
+        height: CustomPalette.border;
+        y: 0;
+
+        bar := Rectangle {
+            x: 0;
+            y: 0;
+            height: CustomPalette.border;
+            width: root.width * (1 - root.progress());
+            background: Palette.foreground;
         }
     }
+
+    HorizontalBox {
+        padding: 0;
+        spacing: 0;
+        y: CustomPalette.border;
+        width: 100%;
+        height: root.height - bar.height;
+
+        Button {
+            icon: Icons.rewind;
+            width: button_width;
+            border-top-right-radius: 0;
+            border-top-left-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+
+        timer_rect := Rectangle {
+            width: timer_width;
+            background: Palette.alternate-background;
+            border-width: 1px;
+            border-color: Palette.background.darker(25%);
+
+            touch := TouchArea {
+                width: timer_width;
+                clicked => { root.is_playing = !root.is_playing; }
+            }
+
+            HorizontalBox {
+                width: timer_width;
+        
+                spacing: 0;
+                padding: 0;
+                alignment: center;
+        
+                Text {
+                    width: 48px;
+                    text: seconds_to_string(root.time_left);
+                    color: Palette.foreground;
+                    vertical-alignment: center;
+                    horizontal-alignment: center;
+                    font-size: 12pt;
+                }
+            
+                Image {
+                    width: 20px;
+                    source: root.is_playing ? Icons.pause : Icons.play;
+                    colorize: Palette.foreground;
+                }
+            }
+        }
+
+        Button {
+            icon: Icons.fast-forward;
+            width: button_width;
+            border-top-right-radius: 0;
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+    }
+
+    pure function progress() -> float {
+        1.0 - (root.time_left / (root.time_total * 1.0));
+    }
+
+    states [
+        hover when touch.pressed: {
+            timer_rect.background: Palette.background;
+        }
+        hover when touch.has-hover: {
+            timer_rect.background: Palette.control-background;
+        }
+    ]
 }
 
 export component SessionWindow inherits Window {
     in property image <=> image.source;
 
+    callback exit-session <=> button_quit.clicked;
+
     image := Image {}
 
-    Timer {
-        progress: slider.value;
-        x: (root.width - self.width) * 0.5;
-        y: root.height - self.height - 50px;
+    Button {
+        icon: Icons.more-horizontal-square;
+        width: 32px;
+        height: 32px;
+        x: 8px;
+        y: 8px;
+
+        clicked => {
+            button_quit.visible = !button_quit.visible;
+        }
     }
 
-    slider := Slider {
-        width: 200px;
-        minimum: 0;
-        maximum: 1;
+    button_quit := Button {
+        visible: false;
+        icon: Icons.square;
+        width: 32px;
+        height: 32px;
+        x: (root.width - self.width) * 0.5;
+        y: root.height - self.height - 50px - 50px - 32px;
+        text: "Quit";
+    }
+
+    Timer {
+        x: (root.width - self.width) * 0.5;
+        y: root.height - self.height - 50px;
+        seconds_to_string(seconds) => { "00:00" }
     }
 }

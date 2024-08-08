@@ -2,13 +2,14 @@ import { Palette, HorizontalBox } from "std-widgets.slint";
 import { CustomPalette } from "styling.slint";
 
 export component Button inherits Rectangle {
-    in-out property icon <=> image.source;
-    in-out property text <=> text.text;
+    in-out property<image> icon;
+    in-out property<string> text;
     in-out property<bool> colorize-icon: false;
 
     callback clicked <=> touch.clicked;
 
     min-height: CustomPalette.border;
+    min-width: max(32px, layout.min-width);
 
     border-radius:CustomPalette.border;
     background: Palette.control-background;
@@ -18,25 +19,37 @@ export component Button inherits Rectangle {
         duration: 50ms;
     }
     
-    image := Image {
-        width: parent.width * 0.5;
-        height: parent.height * 0.5;
-        image-fit: contain;
-        colorize: root.colorize-icon ? text.color : #ffffff;
-    } 
-    text := Text { 
-        color: Palette.foreground;
+    layout := HorizontalBox {
+        alignment: center;
+        
+        if (root.icon.width > 0 && root.icon.height > 0): Image {
+            width: 20px;
+            source <=> root.icon;
+            image-fit: contain;
+            colorize: Palette.foreground;
+        } 
+        if (root.text != ""): Text { 
+            color: Palette.foreground;
+            text: root.text;
+
+            states [
+                normal-pressed when touch.pressed: {
+                    color : Palette.foreground;
+                }
+                normal-hover when touch.has-hover: {
+                    color : Palette.alternate-foreground;
+                }
+            ]
+        }
     }
     touch := TouchArea {}
 
     states [
         normal-pressed when touch.pressed: {
             background: Palette.background;
-            text.color : Palette.foreground;
         }
         normal-hover when touch.has-hover: {
             background: Palette.alternate-background;
-            text.color : Palette.alternate-foreground;
         }
     ]
 }
