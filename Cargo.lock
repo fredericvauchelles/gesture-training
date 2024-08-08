@@ -1984,7 +1984,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "gesture_training"
+name = "gesture_training_app"
 version = "0.1.0"
 dependencies = [
  "async-fs 2.1.2",

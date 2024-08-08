@@ -15,7 +15,6 @@ pub fn start_app() -> Result<(), slint::PlatformError> {
 }
 
 #[allow(dead_code)]
-#[cfg(not(target_os = "android"))]
 fn main() -> Result<(), slint::PlatformError> {
     start_app()
 }
