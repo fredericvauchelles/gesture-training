@@ -1,0 +1,72 @@
+import { Button, VerticalBox, HorizontalBox, Palette, Slider, StyleMetrics } from "std-widgets.slint";
+
+component Timer inherits Rectangle {
+    in property<length> size: 50px;
+    in property<float> progress: 0;
+
+    width: size;
+    height: size;
+
+    // Path {
+    //     x: 0;
+    //     y: 0;
+
+    //     fill: Palette.alternate-background;
+    //     stroke: Palette.background.darker(25%);
+    //     stroke-width: 1px;
+    //     MoveTo { x: 0; y: 0; }
+    //     ArcTo { 
+    //         radius-x: 1;
+    //         radius-y: 1;
+    //         x: 0; y: size / 1px; 
+    //     }
+    //     ArcTo { 
+    //         radius-x: 1;
+    //         radius-y: 1;
+    //         x: 0; y: 0; 
+    //     }
+    // }
+
+    Path {
+        fill: Palette.alternate-background;
+        MoveTo { x: 100; y: 100; }
+        LineTo { x: -100; y: 100; }
+        LineTo { x: -100; y: -100; }
+        LineTo { x: 100; y: -100; }
+        LineTo { x: 100; y: 100; }
+    }
+
+    Path {
+        fill: Palette.foreground;
+        MoveTo { x: 0; y: 0; }
+        // ArcTo {
+        //     large-arc: root.progress >= 50%;
+        //     x: cos(root.progress * 360deg) * ((size - 10px) / 1px); 
+        //     y: sin(root.progress * 360deg) * ((size - 10px) / 1px); 
+        //     radius-x: 1;
+        //     radius-y: 1;
+        // }
+        LineTo { 
+            x: cos(root.progress * 360deg) * 100; 
+            y: sin(root.progress * 360deg) * 100; 
+        }
+    }
+}
+
+export component SessionWindow inherits Window {
+    in property image <=> image.source;
+
+    image := Image {}
+
+    Timer {
+        progress: slider.value;
+        x: (root.width - self.width) * 0.5;
+        y: root.height - self.height - 50px;
+    }
+
+    slider := Slider {
+        width: 200px;
+        minimum: 0;
+        maximum: 1;
+    }
+}
