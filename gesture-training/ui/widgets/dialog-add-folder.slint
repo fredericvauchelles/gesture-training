@@ -7,6 +7,7 @@ import { CustomPalette, Icons } from "styling.slint";
 component AddFolderDialogForm inherits VerticalBox {
     callback accept;
     callback cancel;
+    callback open-file-dialog <=> open_file_dialog_button.clicked;
 
     Rectangle {
         border-radius: CustomPalette.border;
@@ -55,7 +56,7 @@ component AddFolderDialogForm inherits VerticalBox {
                         text: "/path/to/folder";
                         color: Palette.control-foreground.darker(25%);
                     }
-                    Button {
+                    open_file_dialog_button := Button {
                         icon: Icons.edit;
                         width: CustomPalette.preferred-icon-size;
                         height: CustomPalette.preferred-icon-size;

@@ -14,6 +14,9 @@ export component Button inherits Rectangle {
     background: Palette.control-background;
     border-width: 1px;
     border-color: Palette.background;
+    animate background {
+        duration: 50ms;
+    }
     
     image := Image {
         width: parent.width * 0.5;

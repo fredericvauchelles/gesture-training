@@ -39,6 +39,7 @@ export component AppWindow inherits Window {
     }
     MainMenu {
         show-add-folder => { layer_modal.show-add-folder(); }
+        open-source-editor => { layer_modal.show-add-folder(); }
     } 
     layer_modal := ModalDialogLayer {
         width: root.width;

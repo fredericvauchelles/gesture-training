@@ -5,9 +5,12 @@ export struct SourceData {
     enabled: bool,
     name: string,
     image_count: int,
+    is_valid: bool,
 }
 
 component SourceView inherits Rectangle {
+    callback open-editor <=> open_editor_button.clicked;
+
     in-out property<SourceData> data;
 
     height: CustomPalette.preferred-field-height;
@@ -35,7 +38,15 @@ component SourceView inherits Rectangle {
             width: 50px;
             text: data.image_count;
         }
-        Button {
+        Rectangle {
+            width: CustomPalette.preferred-icon-size;
+            Image {
+                width: CustomPalette.preferred-icon-size * 0.75;
+                source: data.is_valid ? Icons.check-circle : Icons.alert-triangle;
+                colorize: data.is_valid ? Palette.foreground : yellow;
+            }
+        }
+        open_editor_button := Button {
             icon: Icons.more-horizontal-square;
             border-radius: 0;
             width: 50px;
@@ -45,9 +56,12 @@ component SourceView inherits Rectangle {
 
 component MainMenuForm inherits VerticalBox {
     callback show-add-folder <=> button_add_folder.clicked;
+    callback open-source-editor(SourceData, int);
+
+    in property<int> total_image_count:0;
 
     in-out property<[SourceData]> datas : [
-        { enabled: true, name: "Clothed misc", image_count: 264 },
+        { enabled: true, name: "Clothed misc", image_count: 264, is_valid: true },
         { enabled: true, name: "Chaaron", image_count: 513 },
     ];
 
@@ -68,6 +82,9 @@ component MainMenuForm inherits VerticalBox {
         }
         for data[index] in datas: SourceView {
             data: data;
+            open-editor => {
+                open-source-editor(data, index);
+            }
         }
         HorizontalBox {
             spacing: 0;
@@ -181,13 +198,14 @@ component MainMenuForm inherits VerticalBox {
         height: CustomPalette.preferred-field-height;
 
         Button {
-            text: "Start";
+            text: "Start (" + total_image_count + ")";
         }
     }
 }
 
 export component MainMenu inherits Rectangle {
     callback show-add-folder <=> form.show-add-folder;
+    callback open-source-editor <=> form.open-source-editor;
 
     HorizontalBox {
         alignment: center;

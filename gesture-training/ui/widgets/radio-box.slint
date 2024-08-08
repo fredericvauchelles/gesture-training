@@ -42,6 +42,10 @@ component RadioButton inherits Rectangle {
             text.color : Palette.alternate-foreground;
         }
     ]
+
+    animate background {
+        duration: 150ms;
+    }
 }
 
 export component RadioBox inherits HorizontalBox {
