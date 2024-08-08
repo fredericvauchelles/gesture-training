@@ -11,6 +11,7 @@ enum ItemPlace {
 component RadioButton inherits Rectangle {
     in property<ItemPlace> item-place: ItemPlace.Alone;
 
+    in-out property<bool> selected: false;
     in-out property icon <=> image.source;
     in-out property text <=> text.text;
 
@@ -18,7 +19,6 @@ component RadioButton inherits Rectangle {
 
     min-height: CustomStyleMetrics.border;
 
-    background: Palette.control-background;
     border-top-left-radius: item-place == ItemPlace.Alone || item-place == ItemPlace.First 
         ? CustomStyleMetrics.border
         : 0px;
@@ -31,27 +31,31 @@ component RadioButton inherits Rectangle {
     border-bottom-right-radius: item-place == ItemPlace.Alone || item-place == ItemPlace.Last 
         ? CustomStyleMetrics.border
         : 0px;
+
+    background: Palette.control-background;
     border-width: 1px;
     border-color: Palette.background;
     
     image := Image {
         width: parent.width * 0.8;
         height: parent.height * 0.8;
-        colorize: Palette.control-foreground;
+        colorize: Palette.foreground;
     } 
     text := Text { 
-        color: Palette.control-foreground;
+        color: Palette.foreground;
     }
     touch := TouchArea {}
 
     states [
-        pressed when touch.pressed: { 
+        selected-normal when selected: {
             background: Palette.selection-background;
             image.colorize: Palette.selection-foreground;
+            text.color : Palette.selection-foreground;
         }
-        hover when touch.has-hover: {
-            background: Palette.selection-background;
-            image.colorize: Palette.selection-foreground;
+        normal-hover when !selected && touch.has-hover: {
+            background: Palette.alternate-background;
+            image.colorize: Palette.alternate-foreground;
+            text.color : Palette.alternate-foreground;
         }
     ]
 }
@@ -70,6 +74,10 @@ export component RadioBox inherits HorizontalBox {
                     ? ItemPlace.First 
                     : ItemPlace.Middle));
                     
+        selected: data.value == selected-value;
         text: data.display;
+        clicked => {
+            root.selected-value = data.value;
+        }
     } 
 }
