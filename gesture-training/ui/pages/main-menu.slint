@@ -1,8 +1,55 @@
-import { Palette, StyleMetrics, VerticalBox, HorizontalBox, ListView } from "std-widgets.slint";
+import { Palette, StyleMetrics, VerticalBox, HorizontalBox, Switch, ListView } from "std-widgets.slint";
 import { RadioBox, Label, Icons, CustomPalette, Button } from "../widgets/widgets.slint";
+
+export struct SourceData {
+    enabled: bool,
+    name: string,
+    image_count: int,
+}
+
+component SourceView inherits Rectangle {
+    in-out property<SourceData> data;
+
+    height: CustomPalette.preferred-field-height;
+    background: Palette.control-background;
+    border-width: CustomPalette.border-width;
+    border-color: Palette.background;
+
+    HorizontalBox {
+        padding-left: CustomPalette.border * 2;
+        padding-right: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+
+        Switch {
+            enabled: data.enabled;
+        }
+        text := Text {
+            text: data.name;
+            vertical-alignment: center;
+            horizontal-alignment: left;
+        }
+        image_count := Text {
+            vertical-alignment: center;
+            horizontal-alignment: right;
+            width: 50px;
+            text: data.image_count;
+        }
+        Button {
+            icon: Icons.more-horizontal-square;
+            border-radius: 0;
+            width: 50px;
+        }
+    }
+}
 
 component MainMenuForm inherits VerticalBox {
     callback show-add-folder <=> button_add_folder.clicked;
+
+    in-out property<[SourceData]> datas : [
+        { enabled: true, name: "Clothed misc", image_count: 264 },
+        { enabled: true, name: "Chaaron", image_count: 513 },
+    ];
 
     VerticalBox {
         spacing: 0;
@@ -19,7 +66,8 @@ component MainMenuForm inherits VerticalBox {
                 text: "Image sources";
             }
         }
-        list := ListView { 
+        for data[index] in datas: SourceView {
+            data: data;
         }
         HorizontalBox {
             spacing: 0;
