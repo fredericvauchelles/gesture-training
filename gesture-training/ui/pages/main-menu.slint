@@ -1,25 +1,16 @@
-import { Palette, StyleMetrics, VerticalBox, Button, HorizontalBox, StandardListView } from "std-widgets.slint";
-import { RadioBox, Label, Icons } from "../widgets/widgets.slint";
+import { Palette, StyleMetrics, VerticalBox, HorizontalBox, StandardListView } from "std-widgets.slint";
+import { RadioBox, Label, Icons, CustomPalette, Button } from "../widgets/widgets.slint";
 
-export component MainMenu inherits VerticalBox {
+component MainMenuForm inherits VerticalBox {
     callback show-add-folder <=> button_add_folder.clicked;
 
-    padding-left: 5% * root.width;
-    padding-right: 5% * root.width;
-    padding-top: 5% * root.height;
-    padding-bottom: 5% * root.height;
 
-    VerticalBox {
-        padding-bottom: 20px;
-
-        list := StandardListView {
-
-        }
-    }
-    
     VerticalBox {
         Label {
             text: "Image Sources";
+        }
+        list := StandardListView { 
+
         }
         HorizontalBox {
             button_add_folder := Button {
@@ -37,43 +28,106 @@ export component MainMenu inherits VerticalBox {
                 height: 50px;
             }
         }
-        Label {
-            text: "Images";
-        }
-        RadioBox {
-            min-height: 50px;
+    }
+    
+    VerticalBox {
+        spacing: 0;
 
-            selected-value: 5;
-            datas: [
-                {value: 5, display: "5"},
-                {value: 10, display: "10"},
-                {value: 15, display: "15"},
-                {value: 20, display: "20"},
-                {value: 25, display: "25"},
-            ];
+        HorizontalBox {
+            spacing: 0;
+            padding: 0;
+    
+            Rectangle {
+                width: 150px;
+                background: Palette.control-background;
+                border-width: 1px;
+                border-top-left-radius: CustomPalette.border;
+                border-color: Palette.background;
+    
+                Text {
+                    width: 100%;
+                    x: 16px;
+                    horizontal-alignment: left;
+                    text: "Images";
+                }
+            }
+            RadioBox {
+                border-top-right: true;
+                height: 50px;
+                selected-value: 5;
+                datas: [
+                    {value: 5, display: "5"},
+                    {value: 10, display: "10"},
+                    {value: 15, display: "15"},
+                    {value: 20, display: "20"},
+                    {value: 25, display: "25"},
+                ];
+            }
         }
-        Label {
-            text: "Durations";
-        }
-        RadioBox {
-            min-height: 50px;
-
-            selected-value: 30;
-            datas: [
-                {value: 30, display: "30''"},
-                {value: 60, display: "1'"},
-                {value: 120, display: "2'"},
-                {value: 180, display: "3'"}, 
-                {value: 300, display: "5'"}, 
-                {value: 600, display: "10'"}, 
-                {value: 600, display: "20'"}, 
-            ];
+        HorizontalBox {
+            spacing: 0;
+            padding: 0;
+    
+            Rectangle {
+                width: 150px;
+                background: Palette.control-background;
+                border-width: 1px;
+                border-bottom-left-radius: CustomPalette.border;
+                border-color: Palette.background;
+    
+                Text {
+                    width: 100%;
+                    x: 16px;
+                    horizontal-alignment: left;
+                    text: "Duration";
+                }
+            }
+            RadioBox {
+                border-bottom-right: true;
+                height: 50px;
+                selected-value: 30;
+                datas: [
+                    {value: 30, display: "30''"},
+                    {value: 60, display: "1'"},
+                    {value: 120, display: "2'"},
+                    {value: 180, display: "3'"}, 
+                    {value: 300, display: "5'"}, 
+                    {value: 600, display: "10'"}, 
+                    {value: 1200, display: "20'"}, 
+                ];
+            }
         }
     }
     
     HorizontalBox {
+        height: 50px;
+
         Button {
             text: "Start";
         }
+    }
+}
+
+export component MainMenu inherits Rectangle {
+    callback show-add-folder <=> form.show-add-folder;
+
+    HorizontalBox {
+        alignment: center;
+        Rectangle {
+            max-width: 500px;
+            preferred-width: 500px;
+
+            VerticalBox {
+                alignment: center;
+                Rectangle {
+                    max-height: 500px;
+    
+                    VerticalBox {
+                        form := MainMenuForm{}
+                    }
+                }
+            }
+        }
+        
     }
 }

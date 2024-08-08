@@ -1,11 +1,12 @@
 import { Button, VerticalBox, StandardListView, HorizontalBox, Palette, StyleMetrics } from "std-widgets.slint";
 import { MainMenu } from "main-menu.slint";
-import { RadioBox, AddFolderDialog, CustomStyleMetrics } from "../widgets/widgets.slint";
+import { RadioBox, AddFolderDialog } from "../widgets/widgets.slint";
 
 component ModalDialogLayer inherits Window {
     visible: false;
     Rectangle {
         opacity: 0.9;
+        background: Palette.background;
     }
     VerticalBox {
         alignment: center;
@@ -33,7 +34,9 @@ component ModalDialogLayer inherits Window {
 
 export component AppWindow inherits Window {
     title: "Gesture Training";
-    Rectangle { }
+    Rectangle {
+        background: Palette.alternate-background;
+    }
     MainMenu {
         show-add-folder => { layer_modal.show-add-folder(); }
     } 

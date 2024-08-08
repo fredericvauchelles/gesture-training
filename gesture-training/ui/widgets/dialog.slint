@@ -1,10 +1,13 @@
-import { Palette, StyleMetrics, VerticalBox } from "std-widgets.slint";
+import { Palette, VerticalBox } from "std-widgets.slint";
+import { CustomPalette } from "styling.slint";
 
 export component CustomDialog inherits Window { 
     callback accept;
     callback cancel;
-    Rectangle {
-        background: white;
+    Rectangle { 
+        background: Palette.alternate-background;
+        border-color: Palette.background.darker(25%);
+        border-radius: 8px;
     }
 
     public function show() {

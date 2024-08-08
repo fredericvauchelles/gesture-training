@@ -1,15 +1,7 @@
-import { Palette, StyleMetrics, Button, HorizontalBox } from "std-widgets.slint";
-import { CustomStyleMetrics } from "styling.slint";
-
-enum ItemPlace {
-    First,
-    Middle,
-    Last,
-    Alone
-}
+import { Palette, Button, HorizontalBox } from "std-widgets.slint";
+import { CustomPalette } from "styling.slint";
 
 component RadioButton inherits Rectangle {
-    in property<ItemPlace> item-place: ItemPlace.Alone;
 
     in-out property<bool> selected: false;
     in-out property icon <=> image.source;
@@ -17,25 +9,12 @@ component RadioButton inherits Rectangle {
 
     callback clicked <=> touch.clicked;
 
-    min-height: CustomStyleMetrics.border;
-
-    border-top-left-radius: item-place == ItemPlace.Alone || item-place == ItemPlace.First 
-        ? CustomStyleMetrics.border
-        : 0px;
-    border-bottom-left-radius: item-place == ItemPlace.Alone || item-place == ItemPlace.First 
-        ? CustomStyleMetrics.border
-        : 0px;
-    border-top-right-radius: item-place == ItemPlace.Alone || item-place == ItemPlace.Last 
-        ? CustomStyleMetrics.border
-        : 0px;
-    border-bottom-right-radius: item-place == ItemPlace.Alone || item-place == ItemPlace.Last 
-        ? CustomStyleMetrics.border
-        : 0px;
+    min-height: CustomPalette.border;
 
     background: Palette.control-background;
     border-width: 1px;
     border-color: Palette.background;
-    
+
     image := Image {
         width: parent.width * 0.8;
         height: parent.height * 0.8;
@@ -52,6 +31,11 @@ component RadioButton inherits Rectangle {
             image.colorize: Palette.selection-foreground;
             text.color : Palette.selection-foreground;
         }
+        normal-pressed when !selected && touch.pressed: {
+            background: Palette.background;
+            image.colorize: Palette.foreground;
+            text.color : Palette.foreground;
+        }
         normal-hover when !selected && touch.has-hover: {
             background: Palette.alternate-background;
             image.colorize: Palette.alternate-foreground;
@@ -61,19 +45,24 @@ component RadioButton inherits Rectangle {
 }
 
 export component RadioBox inherits HorizontalBox {
+    in property<bool> border-top-left;
+    in property<bool> border-top-right;
+    in property<bool> border-bottom-left;
+    in property<bool> border-bottom-right;
+
     in property<[{value: int, display: string}]> datas;
     in-out property<int> selected-value;
     spacing: 0;
+    padding: 0;
 
     for data[index] in datas : RadioButton {
-        item-place: datas.length < 2 
-            ? ItemPlace.Alone
-            :   (index == datas.length - 1 
-                ? ItemPlace.Last 
-                :   (index == 0 
-                    ? ItemPlace.First 
-                    : ItemPlace.Middle));
-                    
+        border-top-left-radius: border-top-left && index == 0 ? CustomPalette.border : 0;
+        border-top-right-radius: border-top-right && index == datas.length - 1 ? CustomPalette.border : 0;
+        border-bottom-left-radius: border-bottom-left && index == 0 ? CustomPalette.border : 0;
+        border-bottom-right-radius: border-bottom-right && index == datas.length - 1 ? CustomPalette.border : 0;
+
+        min-width: 30px;
+
         selected: data.value == selected-value;
         text: data.display;
         clicked => {

@@ -1,67 +1,81 @@
-import { Palette, StyleMetrics, HorizontalBox, VerticalBox, Button } from "std-widgets.slint";
+import { Palette, HorizontalBox, VerticalBox } from "std-widgets.slint";
 import { CustomDialog } from "dialog.slint";
+import { Button } from "button.slint";
+import { Label } from "label.slint";
 
 export component AddFolderDialog inherits CustomDialog {
-    VerticalBox {
-        HorizontalBox {
-            Text {
-                text: "Name";
-                width: 75px;
-                vertical-alignment: center;
-                horizontal-alignment: right;
-            }
-            TextInput {
-                vertical-alignment: center;
-                horizontal-alignment: center;
-                text: "Name of the source";
-            }
-            Image {
-                width: 50px;
-                height: 50px;
-            }
-        }
-        HorizontalBox {
-            Text {
-                text: "Path";
-                width: 75px;
-                vertical-alignment: center;
-                horizontal-alignment: right;
-            }
-            Text {
-                vertical-alignment: center;
-                horizontal-alignment: center;
-                text: "/path/to/folder";
-            }
-            Button {
-                icon: @image-url("icons/edit.svg");
-                width: 50px;
-                height: 50px;
-            }
-        }
-        HorizontalBox {
-            alignment: space-around;
-            padding: 0; 
+    Rectangle {
+        background: Palette.background;
+        border-radius: 8px;
+
+        VerticalBox {
             HorizontalBox {
-                padding: 0;
-                Button {
-                    icon: @image-url("icons/check-square.svg");
-                    width: 50px;
-                    height: 50px;
-                    clicked => { root.accept(); }
+                Label {
+                    text: "Name";
                 }
-                Image {
-                    source: @image-url("icons/alert-triangle.svg");
-                    width: 15px;
-                    vertical-alignment: center;
-                }
-            }
-            Button {
-                icon: @image-url("icons/x-square.svg");
-                width: 50px;
-                height: 50px;
-                clicked => { root.cancel(); }
             }
         }
     }
+    // VerticalBox {
+    //     HorizontalBox {
+    //         Text {
+    //             text: "Name";
+    //             width: 75px;
+    //             vertical-alignment: center;
+    //             horizontal-alignment: right;
+    //         }
+    //         TextInput {
+    //             vertical-alignment: center;
+    //             horizontal-alignment: center;
+    //             text: "Name of the source";
+    //         }
+    //         Image {
+    //             width: 50px;
+    //             height: 50px;
+    //         }
+    //     }
+    //     HorizontalBox {
+    //         Text {
+    //             text: "Path";
+    //             width: 75px;
+    //             vertical-alignment: center;
+    //             horizontal-alignment: right;
+    //         }
+    //         Text {
+    //             vertical-alignment: center;
+    //             horizontal-alignment: center;
+    //             text: "/path/to/folder";
+    //         }
+    //         Button {
+    //             icon: @image-url("icons/edit.svg");
+    //             width: 50px;
+    //             height: 50px;
+    //         }
+    //     }
+    //     HorizontalBox {
+    //         alignment: space-around;
+    //         padding: 0; 
+    //         HorizontalBox {
+    //             padding: 0;
+    //             Button {
+    //                 icon: @image-url("icons/check-square.svg");
+    //                 width: 50px;
+    //                 height: 50px;
+    //                 clicked => { root.accept(); }
+    //             }
+    //             Image {
+    //                 source: @image-url("icons/alert-triangle.svg");
+    //                 width: 15px;
+    //                 vertical-alignment: center;
+    //             }
+    //         }
+    //         Button {
+    //             icon: @image-url("icons/x-square.svg");
+    //             width: 50px;
+    //             height: 50px;
+    //             clicked => { root.cancel(); }
+    //         }
+    //     }
+    // }
     
 }
