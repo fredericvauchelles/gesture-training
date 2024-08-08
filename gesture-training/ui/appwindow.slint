@@ -1,17 +1,145 @@
 import { Button, VerticalBox, StandardListView, HorizontalBox } from "std-widgets.slint";
 
-component RadioBox inherits HorizontalBox {
+struct ThemeWidget {
+    background-color: color,
+    border-color: color,
+    border-radius: length,
+    border-width: length,
+}
+
+struct ThemeText {
+    color: color,
+}
+
+struct ThemeBackground {
+    color: color,
+}
+
+struct ThemeWidgetInput {
+    label-background-color: color,
+    label-color: color,
+    value-background-color: color,
+    value-color: color,
+}
+
+struct ThemeButtonState {
+    color: color,
+    background: color,
+}
+struct ThemeButton {
+    normal: ThemeButtonState,
+    hover: ThemeButtonState,
+    pressed: ThemeButtonState,
+}
+
+struct Theme {
+    background: ThemeBackground,
+    text: ThemeText,
+    widget: ThemeWidget,
+    widget-input: ThemeWidgetInput,
+    button: ThemeButton,
+}
+
+global Themes {
+    in-out property<Theme> theme : {
+        background: {
+            color: #121212,
+        },
+        text: {
+            color: #ffffff,
+        },
+        widget: {
+            background-color: #282828,
+            border-color: #282828,
+            border-radius: 5px,
+            border-width: 0px,
+        },
+        widget-input: {
+            label-background-color: #3f3f3f,
+            label-color: #ffffff,
+            value-background-color: #121212,
+            value-color: #ffffff,
+
+        },
+        button: {
+            normal: {
+                background: #575757,
+                color: #ffffff,
+            },
+            hover: {
+                background: #3f3f3f,
+                color: #ffffff, 
+            },
+            pressed: {
+                background: #282828,
+                color: #ffffff,
+            },
+        }
+    } ;
+}
+
+component BackgroundRectangle inherits Rectangle {
+    background: Themes.theme.background.color;
+}
+
+component WidgetBackgroundRectangle inherits Rectangle {
+    background: Themes.theme.widget.background-color;
+    border-radius: Themes.theme.widget.border-radius;
+    border-width: Themes.theme.widget.border-width;
+    border-color: Themes.theme.widget.border-color;
+}
+
+component LabelField inherits HorizontalBox {
     in-out property title <=> title.text;
-    height: 50px;
-    in property<[{value: int, display: string}]> datas;
-    title := Text {
-        width: 75px;
-        horizontal-alignment: right;
-        vertical-alignment: center;
+    spacing: 0;
+    
+    Rectangle { 
+        width: 100px;
+        background: Themes.theme.widget-input.label-background-color;
+        border-top-left-radius: Themes.theme.widget.border-radius;
+        border-bottom-left-radius: Themes.theme.widget.border-radius;
+
+        title := Text {
+            horizontal-alignment: right;
+            vertical-alignment: center;
+            width: parent.width - 10px;
+    
+            color: Themes.theme.widget-input.label-color;
+        }
     }
+}
+
+component RadioBox inherits LabelField {
+    in property<[{value: int, display: string}]> datas;
     for data[index] in datas : Button {
         text: data.display;
     } 
+}
+
+enum ThemeButtonShape {
+    Full,
+    Left,
+    Right
+}
+component ThemeButton inherits Rectangle {
+    in property<ThemeButtonShape> shape: ThemeButtonShape.Full;
+
+    in-out property icon <=> image.source;
+    in-out property text <=> text.text;
+
+    callback clicked <=> touch.clicked;
+
+    height: text.preferred-height * 1.33;
+    min-width: text.preferred-width + 20px;
+
+    background: touch.pressed ? #6b8282 : touch.has-hover ? #6c616c :  #456;
+    
+    image := Image {
+        width: parent.width;
+        height: parent.height;
+    } 
+    text := Text { }
+    touch := TouchArea {}
 }
 
 component CustomDialog inherits Window {
@@ -99,49 +227,59 @@ component MainMenu inherits VerticalBox {
     padding-top: 5% * root.height;
     padding-bottom: 5% * root.height;
 
-    list := StandardListView {
+    WidgetBackgroundRectangle {
+        VerticalBox {
+            padding-bottom: 20px;
 
-    }
-    HorizontalBox {
-        Text {
-            width: 75px;
-            horizontal-alignment: right;
-            vertical-alignment: center;
-            text: "Add Source";
+            list := StandardListView {
+    
+            }
+    
+            LabelField {
+                title: "Add Source";
+        
+                button_add_folder := ThemeButton {
+                    icon: @image-url("icons/folder.svg");
+                    width: 50px;
+                    height: 50px;
+                }
+                button_add_zip := Button {
+                    icon: @image-url("icons/document-zip.svg");
+                    width: 50px;
+                    height: 50px;
+                }
+            }
         }
-        button_add_folder := Button {
-            icon: @image-url("icons/folder.svg");
-            width: 50px;
-            height: 50px;
+    }
+    
+    
+    WidgetBackgroundRectangle { 
+        VerticalBox {
+            RadioBox {
+                title: "Images";
+                datas: [
+                    {value: 5, display: "5"},
+                    {value: 10, display: "10"},
+                    {value: 15, display: "15"},
+                    {value: 20, display: "20"},
+                    {value: 25, display: "25"},
+                ];
+            }
+            RadioBox {
+                title: "Time";
+                datas: [
+                    {value: 30, display: "30''"},
+                    {value: 60, display: "1'"},
+                    {value: 120, display: "2'"},
+                    {value: 180, display: "3'"}, 
+                    {value: 300, display: "5'"}, 
+                    {value: 600, display: "10'"}, 
+                    {value: 600, display: "20'"}, 
+                ];
+            }
         }
-        button_add_zip := Button {
-            icon: @image-url("icons/document-zip.svg");
-            width: 50px;
-            height: 50px;
-        }
     }
-    RadioBox {
-        title: "Images";
-        datas: [
-            {value: 5, display: "5"},
-            {value: 10, display: "10"},
-            {value: 15, display: "15"},
-            {value: 20, display: "20"},
-            {value: 25, display: "25"},
-        ];
-    }
-    RadioBox {
-        title: "Time";
-        datas: [
-            {value: 30, display: "30''"},
-            {value: 60, display: "1'"},
-            {value: 120, display: "2'"},
-            {value: 180, display: "3'"}, 
-            {value: 300, display: "5'"}, 
-            {value: 600, display: "10'"}, 
-            {value: 600, display: "20'"}, 
-        ];
-    }
+    
     HorizontalBox {
         Button {
             text: "Start";
@@ -150,17 +288,16 @@ component MainMenu inherits VerticalBox {
 }
 
 component ModalDialogLayer inherits Window {
-    opacity: 0.5;
     visible: false;
-    Rectangle {
-        background: black;
+    BackgroundRectangle {
+        opacity: 0.9;
     }
     VerticalBox {
         alignment: center;
         x: 5% * root.width;
         width: 90% * root.width;
         min-height: 100px;
-        opacity: 1;
+
         dialog_add_folder := AddFolderDialog { 
             cancel => { close-modal(); } 
         } 
@@ -181,6 +318,7 @@ component ModalDialogLayer inherits Window {
 
 export component AppWindow inherits Window {
     title: "Gesture Training";
+    BackgroundRectangle { }
     MainMenu {
         show-add-folder => { layer_modal.show-add-folder(); }
     } 
