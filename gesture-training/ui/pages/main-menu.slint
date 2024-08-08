@@ -1,33 +1,63 @@
-import { Palette, StyleMetrics, VerticalBox, HorizontalBox, StandardListView } from "std-widgets.slint";
+import { Palette, StyleMetrics, VerticalBox, HorizontalBox, ListView } from "std-widgets.slint";
 import { RadioBox, Label, Icons, CustomPalette, Button } from "../widgets/widgets.slint";
 
 component MainMenuForm inherits VerticalBox {
     callback show-add-folder <=> button_add_folder.clicked;
 
-
     VerticalBox {
-        Label {
-            text: "Image Sources";
-        }
-        list := StandardListView { 
+        spacing: 0;
 
+        Rectangle {
+            height: CustomPalette.preferred-field-height;
+            background: Palette.control-background;
+            border-top-left-radius: CustomPalette.border;
+            border-top-right-radius: CustomPalette.border;
+            border-width: CustomPalette.border-width;
+            border-color: Palette.background;
+
+            Text {
+                text: "Image sources";
+            }
+        }
+        list := ListView { 
         }
         HorizontalBox {
+            spacing: 0;
+            padding: 0;
+
+            Rectangle {
+                width: CustomPalette.preferred-field-label-width;
+                background: Palette.control-background;
+                border-width: CustomPalette.border-width;
+                border-bottom-left-radius: CustomPalette.border;
+                border-color: Palette.background;
+    
+                Text {
+                    width: 100%;
+                    x: CustomPalette.border * 2;
+                    horizontal-alignment: left;
+                    text: "Add Images";
+                }
+            }
+
             button_add_folder := Button {
-                //shape: ThemeButtonShape.None;
+                border-radius: 0;
+
                 icon: Icons.folder;
                 colorize-icon: true;
-                width: 50px;
-                height: 50px;
+                height: CustomPalette.preferred-field-height;
             }
             button_add_zip := Button {
-                //shape: ThemeButtonShape.Right;
+                border-top-left-radius: 0;
+                border-top-right-radius: 0;
+                border-bottom-left-radius: 0;
+
                 icon: Icons.zip-file;
                 colorize-icon: true;
-                width: 50px;
-                height: 50px;
+                height: CustomPalette.preferred-field-height;
             }
         }
+        
     }
     
     VerticalBox {
@@ -38,22 +68,22 @@ component MainMenuForm inherits VerticalBox {
             padding: 0;
     
             Rectangle {
-                width: 150px;
+                width: CustomPalette.preferred-field-label-width;
                 background: Palette.control-background;
-                border-width: 1px;
+                border-width: CustomPalette.border-width;
                 border-top-left-radius: CustomPalette.border;
                 border-color: Palette.background;
     
                 Text {
                     width: 100%;
-                    x: 16px;
+                    x: CustomPalette.border * 2;
                     horizontal-alignment: left;
                     text: "Images";
                 }
             }
             RadioBox {
                 border-top-right: true;
-                height: 50px;
+                height: CustomPalette.preferred-field-height;
                 selected-value: 5;
                 datas: [
                     {value: 5, display: "5"},
@@ -69,22 +99,22 @@ component MainMenuForm inherits VerticalBox {
             padding: 0;
     
             Rectangle {
-                width: 150px;
+                width: CustomPalette.preferred-field-label-width;
                 background: Palette.control-background;
-                border-width: 1px;
+                border-width: CustomPalette.border-width;
                 border-bottom-left-radius: CustomPalette.border;
                 border-color: Palette.background;
     
                 Text {
                     width: 100%;
-                    x: 16px;
+                    x: CustomPalette.border * 2;
                     horizontal-alignment: left;
                     text: "Duration";
                 }
             }
             RadioBox {
                 border-bottom-right: true;
-                height: 50px;
+                height: CustomPalette.preferred-field-height;
                 selected-value: 30;
                 datas: [
                     {value: 30, display: "30''"},
@@ -94,13 +124,13 @@ component MainMenuForm inherits VerticalBox {
                     {value: 300, display: "5'"}, 
                     {value: 600, display: "10'"}, 
                     {value: 1200, display: "20'"}, 
-                ];
+                ]; 
             }
         }
     }
     
     HorizontalBox {
-        height: 50px;
+        height: CustomPalette.preferred-field-height;
 
         Button {
             text: "Start";
@@ -114,13 +144,12 @@ export component MainMenu inherits Rectangle {
     HorizontalBox {
         alignment: center;
         Rectangle {
-            max-width: 500px;
-            preferred-width: 500px;
+            max-width: CustomPalette.preferred-form-width;
+            preferred-width: CustomPalette.preferred-form-width;
 
             VerticalBox {
                 alignment: center;
                 Rectangle {
-                    max-height: 500px;
     
                     VerticalBox {
                         form := MainMenuForm{}
@@ -128,6 +157,5 @@ export component MainMenu inherits Rectangle {
                 }
             }
         }
-        
     }
 }

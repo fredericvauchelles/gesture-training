@@ -2,80 +2,147 @@ import { Palette, HorizontalBox, VerticalBox } from "std-widgets.slint";
 import { CustomDialog } from "dialog.slint";
 import { Button } from "button.slint";
 import { Label } from "label.slint";
+import { CustomPalette, Icons } from "styling.slint";
 
-export component AddFolderDialog inherits CustomDialog {
+component AddFolderDialogForm inherits VerticalBox {
+    callback accept;
+    callback cancel;
+
     Rectangle {
-        background: Palette.background;
-        border-radius: 8px;
+        border-radius: CustomPalette.border;
 
         VerticalBox {
-            HorizontalBox {
-                Label {
-                    text: "Name";
+            spacing: 0;
+            
+            Rectangle {
+                height: CustomPalette.preferred-field-height;
+                background: Palette.control-background;
+                border-top-left-radius: CustomPalette.border;
+                border-top-right-radius: CustomPalette.border;
+                border-width: CustomPalette.border-width;
+                border-color: Palette.background;
+
+                HorizontalBox {
+                    Text {
+                        text: "Name";
+                        vertical-alignment: center;
+                    }
+                    TextInput {
+                        horizontal-alignment: right;
+                        vertical-alignment: center;
+                        text: "Source Name";
+                        color: Palette.control-foreground.darker(25%);
+                    }
+                    Rectangle {
+                        width: CustomPalette.preferred-icon-size;
+                    }
+                }
+            }
+
+            Rectangle {
+                background: Palette.control-background;
+                border-width: CustomPalette.border-width;
+                border-color: Palette.background;
+
+                HorizontalBox {
+                    Text {
+                        text: "Folder Path";
+                        vertical-alignment: center;
+                    }
+                    Text {
+                        horizontal-alignment: right;
+                        vertical-alignment: center;
+                        text: "/path/to/folder";
+                        color: Palette.control-foreground.darker(25%);
+                    }
+                    Button {
+                        icon: Icons.edit;
+                        width: CustomPalette.preferred-icon-size;
+                        height: CustomPalette.preferred-icon-size;
+                        padding: 0;
+                    }
+                }
+            }
+
+            Rectangle {
+                background: Palette.control-background;
+                border-width: CustomPalette.border-width;
+                border-color: Palette.background;
+
+                HorizontalBox {
+                    Text {
+                        text: "Image Count";
+                        vertical-alignment: center;
+                    }
+                    Text {
+                        horizontal-alignment: right;
+                        vertical-alignment: center;
+                        text: "?";
+                        color: Palette.control-foreground.darker(25%);
+                    }
+                    Rectangle {
+                        width: CustomPalette.preferred-icon-size;
+                        height: CustomPalette.preferred-icon-size;
+                    }
+                }
+            }
+
+            Rectangle {
+                background: Palette.control-background;
+                border-bottom-left-radius: CustomPalette.border;
+                border-bottom-right-radius: CustomPalette.border;
+
+                HorizontalBox {
+                    padding: 0;
+                    spacing: 0;
+
+                    Button {
+                        height: CustomPalette.preferred-field-height;
+                        icon: Icons.plus-circle;
+                        border-top-left-radius: 0;
+                        border-top-right-radius: 0;
+                        border-bottom-right-radius: 0;
+
+                        clicked => { accept(); }
+                    }
+                    Button {
+                        icon: Icons.minus-circle;
+                        border-top-left-radius: 0;
+                        border-top-right-radius: 0;
+                        border-bottom-left-radius: 0;
+
+                        clicked => { cancel(); }
+                    }
                 }
             }
         }
     }
-    // VerticalBox {
-    //     HorizontalBox {
-    //         Text {
-    //             text: "Name";
-    //             width: 75px;
-    //             vertical-alignment: center;
-    //             horizontal-alignment: right;
-    //         }
-    //         TextInput {
-    //             vertical-alignment: center;
-    //             horizontal-alignment: center;
-    //             text: "Name of the source";
-    //         }
-    //         Image {
-    //             width: 50px;
-    //             height: 50px;
-    //         }
-    //     }
-    //     HorizontalBox {
-    //         Text {
-    //             text: "Path";
-    //             width: 75px;
-    //             vertical-alignment: center;
-    //             horizontal-alignment: right;
-    //         }
-    //         Text {
-    //             vertical-alignment: center;
-    //             horizontal-alignment: center;
-    //             text: "/path/to/folder";
-    //         }
-    //         Button {
-    //             icon: @image-url("icons/edit.svg");
-    //             width: 50px;
-    //             height: 50px;
-    //         }
-    //     }
-    //     HorizontalBox {
-    //         alignment: space-around;
-    //         padding: 0; 
-    //         HorizontalBox {
-    //             padding: 0;
-    //             Button {
-    //                 icon: @image-url("icons/check-square.svg");
-    //                 width: 50px;
-    //                 height: 50px;
-    //                 clicked => { root.accept(); }
-    //             }
-    //             Image {
-    //                 source: @image-url("icons/alert-triangle.svg");
-    //                 width: 15px;
-    //                 vertical-alignment: center;
-    //             }
-    //         }
-    //         Button {
-    //             icon: @image-url("icons/x-square.svg");
-    //             width: 50px;
-    //             height: 50px;
-    //             clicked => { root.cancel(); }
-    //         }
-    //     }
-    // }
-    
+}
+
+export component AddFolderDialog inherits CustomDialog {
+
+    HorizontalBox {
+        alignment: center;
+        Rectangle {
+            max-width: CustomPalette.preferred-form-width;
+            preferred-width: CustomPalette.preferred-form-width;
+
+            VerticalBox {
+                alignment: center;
+                Rectangle {
+                    max-height: 500px;
+                    background: Palette.alternate-background;
+                    border-color: Palette.background;
+                    border-radius: CustomPalette.border;
+                    
+                    VerticalBox {
+                        form := AddFolderDialogForm{
+                            accept => { root.accept(); }
+                            cancel => { root.cancel(); }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

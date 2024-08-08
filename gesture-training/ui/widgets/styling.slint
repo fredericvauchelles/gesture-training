@@ -3,11 +3,20 @@ import { Palette } from "std-widgets.slint";
 // Use cosmic specifics
 export global CustomPalette {
     out property<length> border: 8px;
+    out property<length> border-width: 1px;
+    out property<length> preferred-form-width: 600px;
+    out property<length> preferred-field-label-width: 150px;
+    out property<length> preferred-field-height: 50px;
+    out property<length> preferred-icon-size: 30px;
 }
 
 export global Icons {
     out property<image> folder: @image-url("icons/folder.svg");
     out property<image> zip-file: @image-url("icons/document-zip.svg");
+    out property<image> edit: @image-url("icons/edit.svg");
+    out property<image> check-circle: @image-url("icons/check-circle.svg");
+    out property<image> plus-circle: @image-url("icons/plus-circle.svg");
+    out property<image> minus-circle: @image-url("icons/minus-circle.svg");
 }
 
 // From slint-ui

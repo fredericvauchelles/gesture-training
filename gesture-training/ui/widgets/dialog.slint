@@ -4,11 +4,6 @@ import { CustomPalette } from "styling.slint";
 export component CustomDialog inherits Window { 
     callback accept;
     callback cancel;
-    Rectangle { 
-        background: Palette.alternate-background;
-        border-color: Palette.background.darker(25%);
-        border-radius: 8px;
-    }
 
     public function show() {
         self.visible = true;
