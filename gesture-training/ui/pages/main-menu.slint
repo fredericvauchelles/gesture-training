@@ -14,14 +14,9 @@ export struct SourceData {
 
 component SourceView inherits Rectangle {
     in property<bool> enabled: true;
+    in-out property<SourceData> data;
 
     callback open-editor <=> open-editor-button.clicked;
-
-    in-out property<SourceData> data: {
-        status: {
-            type: StatusType.Valid
-        }
-    };
 
     height: CustomPalette.preferred-field-height;
     background: Palette.control-background;
@@ -79,21 +74,13 @@ export struct SelectionData {
 
 export component MainMenu inherits VerticalBox {
     in property<bool> enabled: false;
-    in property<SelectionData> selection-data : {
-        status: { type: StatusType.Valid },
-        image-count: 10,
-    };
+    in property<SelectionData> selection-data;
+    in property<[SourceData]> datas;
 
     callback start;
     callback show-add-source-folder;
     callback show-add-zip-file;
     callback open-source-editor(SourceData, int);
-
-    in-out property<[SourceData]> datas : [
-        { enabled: true, name: "Clothed misc", image-count: 264, status: {type: StatusType.Valid } },
-        { enabled: false, name: "Chaaron", image_count: 513, status: {type: StatusType.Error, error: "file not found in user path, please check file access" } },
-        { enabled: true, name: "Other Test", image_count: 164, status: { type: StatusType.Unknown } },
-    ];
 
     VerticalBox {
         spacing: 0;

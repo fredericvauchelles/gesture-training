@@ -1,7 +1,8 @@
 import { Button, VerticalBox, StandardListView, HorizontalBox, Palette, StyleMetrics } from "std-widgets.slint";
 import { MainMenu } from "main-menu.slint";
-import { RadioBox, EditSourceFolderDialog, CustomPalette } from "../widgets/widgets.slint";
+import { RadioBox, EditSourceFolderDialog, CustomPalette, StatusType } from "../widgets/widgets.slint";
 import { SessionWindow } from "session.slint";
+import { SourceData, SelectionData } from "main-menu.slint";
 
 enum AppFlow {
     MainMenu,
@@ -11,6 +12,12 @@ enum AppFlow {
 
 export component AppWindow inherits Window {
     in-out property<AppFlow> app-flow: AppFlow.MainMenu;
+    in property source-datas <=> main-menu.datas;
+    in property<SelectionData> selection-data: {
+        status: {
+            type: StatusType.Error
+        }
+    };
 
     /** Native Functions */
     callback delete-source-at(int);

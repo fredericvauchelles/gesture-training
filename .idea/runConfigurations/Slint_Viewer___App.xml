@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Slint Viewer - App" type="ShConfigurationType">
-    <option name="SCRIPT_TEXT" value="slint-viewer --style cosmic-dark --auto-reload -I ui -I resources ui/pages/appwindow.slint" />
+    <option name="SCRIPT_TEXT" value="slint-viewer --load-data test/slint-viewer-data.json --style cosmic-dark --auto-reload -I ui -I resources ui/pages/appwindow.slint" />
     <option name="INDEPENDENT_SCRIPT_PATH" value="true" />
     <option name="SCRIPT_PATH" value="" />
     <option name="SCRIPT_OPTIONS" value="" />
