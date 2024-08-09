@@ -10,20 +10,19 @@ enum AppFlow {
     EditSource_Folder,
 }
 
+export global SessionNative {
+    callback on-session-start();
+    callback on-session-stop();
+}
+
+export global ImageSourceNative {
+    callback delete-source-at(int);
+}
+
 export component AppWindow inherits Window {
     in-out property<AppFlow> app-flow: AppFlow.MainMenu;
     in property source-datas <=> main-menu.datas;
-    in property<SelectionData> selection-data: {
-        status: {
-            type: StatusType.Error
-        }
-    };
-
-    /** Native Functions */
-    callback delete-source-at(int);
-    callback on-session-start();
-    callback on-session-stop();
-    /** End Native Functions */
+    in property<SelectionData> selection-data <=> main-menu.selection-data;
 
     title: "Gesture Training";
     Rectangle {
@@ -76,17 +75,6 @@ export component AppWindow inherits Window {
                 cancel => { action-main-menu(); }
                 delete(index) => { action-delete-source(index); }
                 on-add-or-save => { action-main-menu(); }
-
-                // Test
-                get-folder-source-data-from-index(int) => {
-                    {
-                        name: "Test",
-                    }
-                }
-                is-folder-source-data-from-index-valid(int) => {
-                    true
-                }
-                // ~Test
             }
         }
     }
@@ -165,18 +153,18 @@ export component AppWindow inherits Window {
     }
 
     function action-delete-source(source-index: int) {
-        delete-source-at(source-index);
+        ImageSourceNative.delete-source-at(source-index);
         app-flow = AppFlow.MainMenu;
     }
 
     function action-start-session() {
-        on-session-start();
+        SessionNative.on-session-start();
         session.start-session();
         app-flow = AppFlow.Session;
     }
 
     function action-exit-session() {
-        on-session-stop();
+        SessionNative.on-session-stop();
         app-flow = AppFlow.MainMenu;
     }
 }

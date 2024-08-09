@@ -13,16 +13,20 @@ export struct FolderSourceData {
     status: StatusData,
 }
 
+export global SourceFolderNative {
+    callback get-folder-source-data-from-index(int) -> FolderSourceData;
+    callback is-folder-source-data-from-index-valid(int) -> bool;
+    callback add-or-save-folder-source(FolderSourceData);
+    callback open-folder-dialog-for-source-folder();
+}
+
 export component EditSourceFolderDialog inherits VerticalBox {
     callback on-add-or-save;
     callback cancel;
     callback delete(int);
 
     /** Native Functions */
-    callback get-folder-source-data-from-index(int) -> FolderSourceData;
-    callback is-folder-source-data-from-index-valid(int) -> bool;
-    callback add-or-save-folder-source(FolderSourceData);
-    callback open-file-dialog <=> open_file_dialog_button.clicked;
+    
     /** End Native Functions */
 
     out property<bool> is-add;
@@ -41,11 +45,11 @@ export component EditSourceFolderDialog inherits VerticalBox {
     }
 
     public function setup-edit(source-index: int) -> bool {
-        if (!is-folder-source-data-from-index-valid(source-index)) {
+        if (!SourceFolderNative.is-folder-source-data-from-index-valid(source-index)) {
             return false;
         }
 
-        source = get-folder-source-data-from-index(source-index);
+        source = SourceFolderNative.get-folder-source-data-from-index(source-index);
         is-add = false;
         return true;
     }
@@ -107,11 +111,15 @@ export component EditSourceFolderDialog inherits VerticalBox {
                         text: source.path;
                         color: Palette.control-foreground.darker(25%);
                     }
-                    open_file_dialog_button := Button {
+                    Button {
                         icon: Icons.edit;
                         width: CustomPalette.preferred-icon-size;
                         height: CustomPalette.preferred-icon-size;
                         padding: 0;
+
+                        clicked => {
+                            SourceFolderNative.open-folder-dialog-for-source-folder();
+                        }
                     }
                 }
             }
@@ -186,7 +194,7 @@ export component EditSourceFolderDialog inherits VerticalBox {
                         border-bottom-right-radius: 0;
 
                         clicked => { 
-                            add-or-save-folder-source(source);
+                            SourceFolderNative.add-or-save-folder-source(source);
                             on-add-or-save();
                         }
                     }
