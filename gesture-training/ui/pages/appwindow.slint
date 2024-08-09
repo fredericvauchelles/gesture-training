@@ -35,20 +35,27 @@ export component AppWindow inherits Window {
         height: 100%;
 
         modal-overlay := Rectangle {
-            visible: false;
-            opacity: 0.9;
+            opacity: 0;
             background: Palette.background;
+
+            animate opacity {
+                duration: 200ms;
+            }
         }
 
         modal-background := Rectangle {
-            visible: false;
             
             background: Palette.alternate-background;
             border-color: Palette.background;
             border-radius: CustomPalette.border;
 
-            width: min(CustomPalette.preferred-form-width, root.width);
-            height: dialog-edit-source-folder.preferred-height;
+            width: modal-width() * 1.25;
+            height: modal-height() * 1.25;
+
+            opacity: 0;
+            animate opacity, width, height {
+                duration: 200ms;
+            }
 
             dialog-edit-source-folder := EditSourceFolderDialog {
                 visible: false;
@@ -59,8 +66,11 @@ export component AppWindow inherits Window {
 
     states [
         edit-source-folder when app-flow == AppFlow.EditSource_Folder: {
-            modal-overlay.visible: true;
-            modal-background.visible: true;
+            modal-overlay.opacity: 0.9;
+            modal-background.opacity: 1;
+
+            modal-background.width: modal-width();
+            modal-background.height: modal-height();
 
             dialog-edit-source-folder.visible: true;
         }
@@ -68,4 +78,11 @@ export component AppWindow inherits Window {
             main-menu.enabled: true;
         }
     ]
+
+    pure function modal-width() -> length {
+        min(CustomPalette.preferred-form-width, root.width)
+    }
+    pure function modal-height() -> length {
+        dialog-edit-source-folder.preferred-height
+    }
 }
