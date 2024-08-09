@@ -1,0 +1,44 @@
+import { Palette } from "std-widgets.slint";
+import { CustomPalette, Icons } from "styling.slint";
+
+export enum StatusType {
+    Valid,
+    Error,
+    Unknown
+}
+export struct StatusData {
+    type: StatusType,
+    error: string,
+}
+
+export component StatusIcon inherits Rectangle {
+    in property<StatusData> data;
+
+    width: CustomPalette.preferred-icon-size * 0.75;
+
+    Image {
+        width: 100%;
+        source: get-status-icon(data.type);
+        colorize: get-status-brush(data.type);
+    }
+
+    pure function get-status-icon(status: StatusType) -> image {
+        if (status == StatusType.Valid) {
+            Icons.check-circle
+        } else if (status == StatusType.Error) {
+            Icons.alert-triangle
+        } else {
+            Icons.refresh
+        }
+    }
+
+    pure function get-status-brush(status: StatusType) -> brush {
+        if (status == StatusType.Valid) {
+            Palette.foreground
+        } else if (status == StatusType.Error) {
+            yellow
+        } else {
+            Palette.foreground
+        }
+    }
+}

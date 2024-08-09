@@ -1,17 +1,11 @@
 import { Palette, StyleMetrics, VerticalBox, HorizontalBox, Switch, ListView } from "std-widgets.slint";
-import { RadioBox, Label, Icons, CustomPalette, Button } from "../widgets/widgets.slint";
-
-export enum SourceDataStatus {
-    Valid,
-    HasError,
-    Unknown
-}
+import { RadioBox, Label, Icons, CustomPalette, Button, StatusIcon, StatusType, StatusData } from "../widgets/widgets.slint";
 
 export struct SourceData {
     enabled: bool,
     name: string,
-    image_count: int,
-    status: SourceDataStatus,
+    image-count: int,
+    status: StatusData,
 }
 
 component SourceView inherits Rectangle {
@@ -49,10 +43,8 @@ component SourceView inherits Rectangle {
         }
         Rectangle {
             width: CustomPalette.preferred-icon-size;
-            Image {
-                width: CustomPalette.preferred-icon-size * 0.75;
-                source: get-status-icon(data.status);
-                colorize: get-status-brush(data.status);
+            StatusIcon {
+                data: data.status;
             }
         }
         open-editor-button := Button {
@@ -63,48 +55,35 @@ component SourceView inherits Rectangle {
         }
     }
 
-    pure function get-status-icon(status: SourceDataStatus) -> image {
-        if (status == SourceDataStatus.Valid) {
-            Icons.check-circle
-        } else if (status == SourceDataStatus.HasError) {
-            Icons.alert-triangle
-        } else {
-            Icons.refresh
-        }
-    }
-
-    pure function get-status-brush(status: SourceDataStatus) -> brush {
-        if (status == SourceDataStatus.Valid) {
-            Palette.foreground
-        } else if (status == SourceDataStatus.HasError) {
-            yellow
-        } else {
-            Palette.foreground
-        }
-    }
-
     pure function get-image-count(data: SourceData) -> string {
-        if (data.status == SourceDataStatus.Valid) {
-            data.image_count
+        if (data.status.type == StatusType.Valid) {
+            data.image-count
         } else {
             "?"
         }
     }
 }
 
+export struct SelectionData {
+    status: StatusData,
+    image-count: int,
+}
+
 export component MainMenu inherits VerticalBox {
     in property<bool> enabled: false;
+    in property<SelectionData> selection-data : {
+        status: { type: StatusType.Valid },
+        image-count: 10,
+    };
 
     callback show-add-source-folder;
     callback show-add-zip-file;
     callback open-source-editor(SourceData, int);
 
-    in property<int> total_image_count:0;
-
     in-out property<[SourceData]> datas : [
-        { enabled: true, name: "Clothed misc", image_count: 264, status: SourceDataStatus.Valid },
-        { enabled: false, name: "Chaaron", image_count: 513, status: SourceDataStatus.HasError },
-        { enabled: true, name: "Other Test", image_count: 164, status: SourceDataStatus.Unknown },
+        { enabled: true, name: "Clothed misc", image-count: 264, status: {type: StatusType.Valid } },
+        { enabled: false, name: "Chaaron", image_count: 513, status: {type: StatusType.Error, error: "file not found" } },
+        { enabled: true, name: "Other Test", image_count: 164, status: { type: StatusType.Unknown } },
     ];
 
     VerticalBox {
@@ -253,9 +232,13 @@ export component MainMenu inherits VerticalBox {
         height: CustomPalette.preferred-field-height;
 
         Button {
-            enabled <=> root.enabled;
+            enabled: root.enabled && selection-data.status.type == StatusType.Valid;
 
-            text: "Start (" + total_image_count + ")";
+            text: "Start (" + selection-data.image-count + ")";
+        }
+
+        StatusIcon {
+            data: selection-data.status;
         }
     }
 }
