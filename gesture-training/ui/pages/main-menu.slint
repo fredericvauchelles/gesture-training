@@ -82,7 +82,7 @@ export component MainMenu inherits VerticalBox {
 
     in-out property<[SourceData]> datas : [
         { enabled: true, name: "Clothed misc", image-count: 264, status: {type: StatusType.Valid } },
-        { enabled: false, name: "Chaaron", image_count: 513, status: {type: StatusType.Error, error: "file not found" } },
+        { enabled: false, name: "Chaaron", image_count: 513, status: {type: StatusType.Error, error: "file not found in user path, please check file access" } },
         { enabled: true, name: "Other Test", image_count: 164, status: { type: StatusType.Unknown } },
     ];
 

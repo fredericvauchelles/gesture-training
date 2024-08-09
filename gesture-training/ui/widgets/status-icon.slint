@@ -1,4 +1,4 @@
-import { Palette } from "std-widgets.slint";
+import { Palette, HorizontalBox } from "std-widgets.slint";
 import { CustomPalette, Icons } from "styling.slint";
 
 export enum StatusType {
@@ -15,6 +15,36 @@ export component StatusIcon inherits Rectangle {
     in property<StatusData> data;
 
     width: CustomPalette.preferred-icon-size * 0.75;
+
+    popup := PopupWindow {
+        Rectangle {
+            background: Palette.background;
+            border-radius: CustomPalette.border;
+            border-width: CustomPalette.border-width;
+            border-color: yellow.darker(100%);
+        }
+
+        HorizontalBox {
+            text := Text {
+                max-width: 200px;
+
+                text: data.error;
+                wrap: char-wrap;
+                vertical-alignment: center;
+                horizontal-alignment: center;
+            }
+        }
+
+        x: -popup.preferred-width - 4px;
+    }
+    touch := TouchArea {
+        clicked => {
+            if (data.type == StatusType.Error)
+            {
+                popup.show();
+            }
+        }
+    }
 
     Image {
         width: 100%;
