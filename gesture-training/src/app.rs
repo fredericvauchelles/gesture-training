@@ -140,7 +140,7 @@ pub struct App {}
 
 impl App {
     pub fn run() -> Result<(), slint::PlatformError> {
-        let ui = Arc::new(sg::AppWindow::new()?);
+        let ui = sg::AppWindow::new()?;
         let backend = Arc::new(RefCell::new(app_backend::AppBackend::new()));
         Self::bind(&ui, &backend);
         ui.run()
@@ -170,7 +170,7 @@ mod app_impl {
     }
 
     impl App {
-        pub(super) fn bind(ui: &Arc<sg::AppWindow>, backend: &ArcBackend) {
+        pub(super) fn bind(ui: &sg::AppWindow, backend: &ArcBackend) {
             {
                 ui.set_image_source_selector_datas(
                     backend
@@ -183,7 +183,6 @@ mod app_impl {
 
             {
                 let backend = backend.clone();
-                let ui1 = ui.clone();
                 ui.global::<sg::EditSourceFolderNative>()
                     .on_add_or_save_folder_source(move |data| {
                         if let Err(error) = backend
@@ -193,7 +192,6 @@ mod app_impl {
                                 App::add_or_update_image_source_from_edit(
                                     &mut backend,
                                     &data,
-                                    &ui1,
                                 );
                             })
                         {
@@ -206,7 +204,6 @@ mod app_impl {
         pub(super) fn add_or_update_image_source_from_edit(
             backend: &mut Backend,
             data: &sg::EditSourceFolderData,
-            _ui: &AppWindow,
         ) {
             let mut data = data.clone();
             let id = Uuid::from_str(&data.id).unwrap_or_else(|_| Uuid::new_v4());
