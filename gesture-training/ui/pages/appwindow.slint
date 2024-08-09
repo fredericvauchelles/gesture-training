@@ -37,10 +37,6 @@ export component AppWindow inherits Window {
         modal-overlay := Rectangle {
             opacity: 0;
             background: Palette.background;
-
-            animate opacity {
-                duration: 200ms;
-            }
         }
 
         modal-background := Rectangle {
@@ -49,16 +45,12 @@ export component AppWindow inherits Window {
             border-color: Palette.background;
             border-radius: CustomPalette.border;
 
-            width: modal-width() * 1.25;
-            height: modal-height() * 1.25;
-
+            width: modal-width();
+            height: 0;
             opacity: 0;
-            animate opacity, width, height {
-                duration: 200ms;
-            }
 
             dialog-edit-source-folder := EditSourceFolderDialog {
-                visible: false;
+                opacity: 0;
                 cancel => { app-flow = AppFlow.MainMenu; }
             }
         }
@@ -67,12 +59,34 @@ export component AppWindow inherits Window {
     states [
         edit-source-folder when app-flow == AppFlow.EditSource_Folder: {
             modal-overlay.opacity: 0.9;
+            
             modal-background.opacity: 1;
-
-            modal-background.width: modal-width();
             modal-background.height: modal-height();
 
-            dialog-edit-source-folder.visible: true;
+            dialog-edit-source-folder.opacity: 1;
+
+            in {
+                animate modal-overlay.opacity
+                        , modal-background.opacity
+                        , modal-background.height {
+                    duration: 200ms;
+                }
+                animate dialog-edit-source-folder.opacity {
+                    delay: 200ms;
+                    duration: 200ms;
+                }
+            }
+            out {
+                animate dialog-edit-source-folder.opacity {
+                    duration: 200ms;
+                }
+                animate modal-overlay.opacity
+                        , modal-background.opacity
+                        , modal-background.height {
+                    delay: 200ms;
+                    duration: 200ms;
+                }
+            }
         }
         main-menu when app-flow == AppFlow.MainMenu: {
             main-menu.enabled: true;
