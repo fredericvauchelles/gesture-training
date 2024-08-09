@@ -19,7 +19,6 @@ export global EditSourceFolderNative {
     callback open-folder-dialog-for-source-folder();
 
     // Test implementations
-    is-folder-source-data-from-id-valid(string) => { true } 
     get-folder-source-data-from-id(string) => { {
         name: "Test"
     } }
@@ -35,11 +34,11 @@ export component EditSourceFolder inherits VerticalBox {
     /** End Native Functions */
 
     out property<bool> is-add;
-    in-out property<EditSourceFolderData> source;
+    in-out property<EditSourceFolderData> data;
 
     public function setup-add() {
         is-add = true;
-        source = {
+        data = {
             name: "Unnamed",
             path: "path/to/folder",
             image-count: 0,
@@ -50,11 +49,11 @@ export component EditSourceFolder inherits VerticalBox {
     }
 
     public function setup-edit(source-id: string) -> bool {
-        if (!EditSourceFolderNative.is-folder-source-data-from-id-valid(source-id)) {
+        data = EditSourceFolderNative.get-folder-source-data-from-id(source-id);
+        if (data.id == "") {
             return false;
         }
-
-        source = EditSourceFolderNative.get-folder-source-data-from-id(source-id);
+        
         is-add = false;
         return true;
     }
@@ -90,7 +89,7 @@ export component EditSourceFolder inherits VerticalBox {
                     TextInput {
                         horizontal-alignment: right;
                         vertical-alignment: center;
-                        text: source.name;
+                        text: data.name;
                         color: Palette.control-foreground.darker(25%);
                     }
                     Rectangle {
@@ -113,7 +112,7 @@ export component EditSourceFolder inherits VerticalBox {
                     Text {
                         horizontal-alignment: right;
                         vertical-alignment: center;
-                        text: source.path;
+                        text: data.path;
                         color: Palette.control-foreground.darker(25%);
                     }
                     Button {
@@ -143,8 +142,8 @@ export component EditSourceFolder inherits VerticalBox {
                     Text {
                         horizontal-alignment: right;
                         vertical-alignment: center;
-                        text: source.status.type == StatusIconType.Valid 
-                            ? source.image-count 
+                        text: data.status.type == StatusIconType.Valid 
+                            ? data.image-count 
                             : "?";
                         color: Palette.control-foreground.darker(25%);
                     }
@@ -176,7 +175,7 @@ export component EditSourceFolder inherits VerticalBox {
                         text: "Delete";
                         content-color: red;
                         border-radius: 0;
-                        clicked => { delete(source.id); }
+                        clicked => { delete(data.id); }
                     }
                 }
             }
@@ -199,7 +198,7 @@ export component EditSourceFolder inherits VerticalBox {
                         border-bottom-right-radius: 0;
 
                         clicked => { 
-                            EditSourceFolderNative.add-or-save-folder-source(source);
+                            EditSourceFolderNative.add-or-save-folder-source(data);
                             on-add-or-save();
                         }
                     }

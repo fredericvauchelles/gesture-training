@@ -1,124 +1,23 @@
 import { VerticalBox, HorizontalBox, Palette, Slider, StyleMetrics } from "std-widgets.slint";
-import { CustomPalette, Icons, Button } from "../widgets/widgets.slint";
-
-component Timer inherits Rectangle {
-    in property<int> time-left: 0;
-    in property<int> time-total: 90;
-    in-out property<bool> is-playing: false;
-
-    in property<length> timer-width: 80px;
-    in property<length> button-width: 40px;
-
-    /** Native Function */
-    pure callback seconds-to-string(int) -> string;
-    /** End Native Function */
-
-    width: timer-width + 2 * button-width;
-    height: 50px;
-
-    Rectangle {
-        background: Palette.alternate-background;
-        border-top-left-radius: CustomPalette.border;
-        border-top-right-radius: CustomPalette.border;
-        border-width: 1px;
-        border-color: Palette.background.darker(25%);
-        clip: true;
-
-        width: 100%;
-        height: CustomPalette.border;
-        y: 0;
-
-        bar := Rectangle {
-            x: 0;
-            y: 0;
-            height: CustomPalette.border;
-            width: root.width * (1 - root.progress());
-            background: Palette.foreground;
-        }
-    }
-
-    HorizontalBox {
-        padding: 0;
-        spacing: 0;
-        y: CustomPalette.border;
-        width: 100%;
-        height: root.height - bar.height;
-
-        Button {
-            icon: Icons.rewind;
-            width: button-width;
-            border-top-right-radius: 0;
-            border-top-left-radius: 0;
-            border-bottom-right-radius: 0;
-        }
-
-        timer-rect := Rectangle {
-            width: timer-width;
-            background: Palette.alternate-background;
-            border-width: 1px;
-            border-color: Palette.background.darker(25%);
-
-            touch := TouchArea {
-                width: timer-width;
-                clicked => { root.is-playing = !root.is-playing; }
-            }
-
-            HorizontalBox {
-                width: timer-width;
-        
-                spacing: 0;
-                padding: 0;
-                alignment: center;
-        
-                Text {
-                    width: 48px;
-                    text: seconds-to-string(root.time-left);
-                    color: Palette.foreground;
-                    vertical-alignment: center;
-                    horizontal-alignment: center;
-                    font-size: 12pt;
-                }
-            
-                Image {
-                    width: 20px;
-                    source: root.is-playing ? Icons.pause : Icons.play;
-                    colorize: Palette.foreground;
-                }
-            }
-        }
-
-        Button {
-            icon: Icons.fast-forward;
-            width: button-width;
-            border-top-right-radius: 0;
-            border-top-left-radius: 0;
-            border-bottom-left-radius: 0;
-        }
-    }
-
-    pure function progress() -> float {
-        1.0 - (root.time-left / (root.time-total * 1.0));
-    }
-
-    states [
-        hover when touch.pressed: {
-            timer-rect.background: Palette.background;
-        }
-        hover when touch.has-hover: {
-            timer-rect.background: Palette.control-background;
-        }
-    ]
-}
+import { CustomPalette, Icons, Button, Timer } from "../widgets/widgets.slint";
+import { PreparedSessionData } from "common.slint";
 
 export component SessionWindow inherits Rectangle {
-    in property image <=> image.source;
+    in-out property current-image <=> image.source;
+    in-out property time-left <=> timer.time-left;
 
     callback exit-session <=> button_quit.clicked;
 
     in-out property<bool> expand-menu: false;
 
-    public function start-session() {
+    public function prepare-start-session(prepared-session-data: PreparedSessionData) {
         expand-menu = false;
+        timer.time-total = prepared-session-data.image-duration;
+        time-left = prepared-session-data.image-duration;
+    }
+
+    public function show-image(img: image) {
+        current-image = img;
     }
 
     image := Image {}
@@ -145,7 +44,7 @@ export component SessionWindow inherits Rectangle {
         text: "Quit";
     }
 
-    Timer {
+    timer := Timer {
         x: (root.width - self.width) * 0.5;
         y: root.height - self.height - 50px;
     }

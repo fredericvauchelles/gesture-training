@@ -6,16 +6,11 @@ import {
     StatusIconType, ImageSourceSelector, ImageSourceSelectorEntryData
 } from "../widgets/widgets.slint";
 
-import { ImageSourceType } from "common.slint";
-
-export struct PrepareSessionData {
-    status: StatusIconData,
-    image-count: int,
-}
+import { ImageSourceType, PreparedSessionData } from "common.slint";
 
 export component PrepareSession inherits VerticalBox {
     in property<bool> enabled: false;
-    in property<PrepareSessionData> prepare-session-data;
+    in property<PreparedSessionData> prepared-session-data;
     in property<[ImageSourceSelectorEntryData]> image-source-selector-datas;
 
     callback start-session;
@@ -112,7 +107,7 @@ export component PrepareSession inherits VerticalBox {
 
                 border-top-right: true;
                 height: CustomPalette.preferred-field-height;
-                selected-value: 5;
+                selected-value: prepared-session-data.image-count;
                 datas: [
                     {value: 5, display: "5"},
                     {value: 10, display: "10"},
@@ -145,7 +140,7 @@ export component PrepareSession inherits VerticalBox {
 
                 border-bottom-right: true;
                 height: CustomPalette.preferred-field-height;
-                selected-value: 30;
+                selected-value: prepared-session-data.image-duration;
                 datas: [
                     {value: 30, display: "30''"},
                     {value: 60, display: "1'"},
@@ -163,14 +158,14 @@ export component PrepareSession inherits VerticalBox {
         height: CustomPalette.preferred-field-height;
 
         Button {
-            enabled: root.enabled && prepare-session-data.status.type == StatusIconType.Valid;
+            enabled: root.enabled && prepared-session-data.status.type == StatusIconType.Valid;
 
-            text: "Start (" + prepare-session-data.image-count + ")";
+            text: "Start (" + prepared-session-data.image-count + ")";
             clicked => { start-session(); }
         }
 
         StatusIcon {
-            data: prepare-session-data.status;
+            data: prepared-session-data.status;
         }
     }
 }

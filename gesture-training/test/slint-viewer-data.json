@@ -26,8 +26,9 @@
       }
     }
   ],
-  "prepare-session-data": {
+  "prepared-session-data": {
     "image-count": 10,
+    "image-duration": 10,
     "status": {
       "type": "Valid"
     }

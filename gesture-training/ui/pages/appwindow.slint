@@ -1,17 +1,19 @@
 import { Button, VerticalBox, StandardListView, HorizontalBox, Palette, StyleMetrics } from "std-widgets.slint";
-import { RadioBox, ImageSourceSelectorEntryData, EditSourceFolder, CustomPalette } from "../widgets/widgets.slint";
+import { RadioBox, ImageSourceSelectorEntryData, 
+    EditSourceFolder, EditSourceFolderData, CustomPalette 
+} from "../widgets/widgets.slint";
 import { SessionWindow } from "session.slint";
-import { PrepareSession, PrepareSessionData } from "prepare-session.slint";
+import { PrepareSession } from "prepare-session.slint";
 
 // export data structs
 export {
-    EditSourceFolderNative, EditSourceFolderData, StatusIconData, StatusIconType,
+    StatusIconData, StatusIconType,
 
 } from "../widgets/widgets.slint";
-import { ImageSourceType } from "common.slint";
+import { ImageSourceType, PreparedSessionData } from "common.slint";
 
 enum AppFlow {
-    MainMenu,
+    PrepareSession,
     Session,
     EditSource_Folder,
 }
@@ -26,10 +28,11 @@ export global ImageSourceNative {
 }
 
 export component AppWindow inherits Window {
-    in-out property<AppFlow> app-flow: AppFlow.MainMenu;
+    in-out property<AppFlow> app-flow: AppFlow.PrepareSession;
     in property<[ImageSourceSelectorEntryData]> image-source-selector-datas;
-    in property<PrepareSessionData> prepare-session-data <=> prepare-session.prepare-session-data;
-
+    in property<PreparedSessionData> prepared-session-data <=> prepare-session.prepared-session-data;
+    in-out property<EditSourceFolderData> edited-source-folder-data <=> edit-source-folder.data;
+    
     title: "Gesture Training";
     Rectangle {
         background: Palette.alternate-background;
@@ -129,7 +132,7 @@ export component AppWindow inherits Window {
                 }
             }
         }
-        prepare-session when app-flow == AppFlow.MainMenu: {
+        prepare-session when app-flow == AppFlow.PrepareSession: {
             prepare-session.opacity: 1;
             prepare-session.enabled: true;
         }
@@ -138,6 +141,7 @@ export component AppWindow inherits Window {
         }
     ]
 
+    // Modal
     pure function modal-width() -> length {
         min(CustomPalette.preferred-form-width, root.width)
     }
@@ -145,10 +149,7 @@ export component AppWindow inherits Window {
         edit-source-folder.preferred-height
     }
 
-    function action-prepare-session() {
-        app-flow = AppFlow.MainMenu;
-    }
-
+    // Image Source
     function action-open-add-image-source(type: ImageSourceType) {
         if (type == ImageSourceType.Folder) {
             edit-source-folder.setup-add();
@@ -164,17 +165,27 @@ export component AppWindow inherits Window {
 
     function action-delete-source(source-id: string) {
         ImageSourceNative.delete-source-id(source-id);
-        app-flow = AppFlow.MainMenu;
+        action-prepare-session();
     }
 
+    // Prepare session
+    function action-prepare-session() {
+        app-flow = AppFlow.PrepareSession;
+    }
+
+    // Session
     function action-start-session() {
-        SessionNative.on-session-start();
-        session.start-session();
         app-flow = AppFlow.Session;
+        session.prepare-start-session(prepared-session-data);
+        SessionNative.on-session-start();
     }
 
     function action-exit-session() {
         SessionNative.on-session-stop();
-        app-flow = AppFlow.MainMenu;
+        action-prepare-session();
+    }
+
+    function session-show-image(img: image) {
+        session.show-image(img);
     }
 }
