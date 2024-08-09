@@ -6,6 +6,7 @@ export enum SourceType {
 }
 
 export struct SourceData {
+    id: string,
     enabled: bool,
     name: string,
     image-count: int,
@@ -80,7 +81,7 @@ export component MainMenu inherits VerticalBox {
     callback start;
     callback show-add-source-folder;
     callback show-add-zip-file;
-    callback open-source-editor(SourceData, int);
+    callback open-source-editor(SourceData);
 
     VerticalBox {
         spacing: 0;
@@ -101,7 +102,7 @@ export component MainMenu inherits VerticalBox {
             enabled <=> root.enabled;
             data: data;
             open-editor => {
-                open-source-editor(data, index);
+                open-source-editor(data);
             }
         }
         HorizontalBox {

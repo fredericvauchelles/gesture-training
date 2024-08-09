@@ -12,6 +12,9 @@ path = "src/lib.rs"
 
 [dependencies]
 slint = { version = "1.7.1", features = ["backend-android-activity-06"] }
+uuid = { version = "1.10.0", features = ["v4"] }
+anyhow = "1.0.86"
+thiserror = "1.0.63"
 
 [build-dependencies]
 slint-build = "1.7.1"

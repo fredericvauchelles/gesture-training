@@ -1,17 +1,17 @@
-slint::include_modules!();
+use slint_includes::*;
+
+use crate::app_data::AppData;
+
+mod app_data;
+mod slint_includes;
 
 pub fn start_app() -> Result<(), slint::PlatformError> {
-    let ui = AppWindow::new()?;
+    let app_window = AppWindow::new()?;
 
-    // ui.on_request_increase_value({
-    //     let ui_handle = ui.as_weak();
-    //     move || {
-    //         let ui = ui_handle.unwrap();
-    //         ui.set_counter(ui.get_counter() + 1);
-    //     }
-    // });
+    let app_data = AppData::new();
+    AppData::bind_window(&app_data, &app_window);
 
-    ui.run()
+    app_window.run()
 }
 
 #[allow(dead_code)]

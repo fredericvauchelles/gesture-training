@@ -6,7 +6,7 @@ import { StatusData, StatusType } from "status-icon.slint";
 import { CustomPalette, Icons } from "styling.slint";
 
 export struct FolderSourceData {
-    id: int,
+    id: string,
     name: string,
     path: string,
     image-count: int,
@@ -14,16 +14,22 @@ export struct FolderSourceData {
 }
 
 export global SourceFolderNative {
-    callback get-folder-source-data-from-index(int) -> FolderSourceData;
-    callback is-folder-source-data-from-index-valid(int) -> bool;
+    callback get-folder-source-data-from-id(string) -> FolderSourceData;
+    callback is-folder-source-data-from-id-valid(string) -> bool;
     callback add-or-save-folder-source(FolderSourceData);
     callback open-folder-dialog-for-source-folder();
+
+    // Test implementations
+    is-folder-source-data-from-id-valid(string) => { true } 
+    get-folder-source-data-from-id(string) => { {
+        name: "Test"
+    } }
 }
 
 export component EditSourceFolderDialog inherits VerticalBox {
     callback on-add-or-save;
     callback cancel;
-    callback delete(int);
+    callback delete(string);
 
     /** Native Functions */
     
@@ -44,12 +50,12 @@ export component EditSourceFolderDialog inherits VerticalBox {
         };
     }
 
-    public function setup-edit(source-index: int) -> bool {
-        if (!SourceFolderNative.is-folder-source-data-from-index-valid(source-index)) {
+    public function setup-edit(source-id: string) -> bool {
+        if (!SourceFolderNative.is-folder-source-data-from-id-valid(source-id)) {
             return false;
         }
 
-        source = SourceFolderNative.get-folder-source-data-from-index(source-index);
+        source = SourceFolderNative.get-folder-source-data-from-id(source-id);
         is-add = false;
         return true;
     }

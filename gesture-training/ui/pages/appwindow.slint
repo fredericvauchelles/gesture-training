@@ -4,6 +4,8 @@ import { RadioBox, EditSourceFolderDialog, CustomPalette, StatusType } from "../
 import { SessionWindow } from "session.slint";
 import { SourceData, SelectionData } from "main-menu.slint";
 
+export { SourceFolderNative, FolderSourceData } from "../widgets/widgets.slint";
+
 enum AppFlow {
     MainMenu,
     Session,
@@ -16,7 +18,7 @@ export global SessionNative {
 }
 
 export global ImageSourceNative {
-    callback delete-source-at(int);
+    callback delete-source-id(string);
 }
 
 export component AppWindow inherits Window {
@@ -46,7 +48,7 @@ export component AppWindow inherits Window {
                 enabled: false;
                 start => { action-start-session(); }
                 show-add-source-folder => { action-add-source-folder(); }
-                open-source-editor(data, index) => { action-edit-source-folder(index); }
+                open-source-editor(data) => { action-edit-source-folder(data.id); }
             } 
         }
     }
@@ -146,14 +148,14 @@ export component AppWindow inherits Window {
         app-flow = AppFlow.EditSource_Folder;
     }
 
-    function action-edit-source-folder(source-index: int) {
-        if (dialog-edit-source-folder.setup-edit(source-index)) {
+    function action-edit-source-folder(source-id: string) {
+        if (dialog-edit-source-folder.setup-edit(source-id)) {
             app-flow = AppFlow.EditSource_Folder;
         }
     }
 
-    function action-delete-source(source-index: int) {
-        ImageSourceNative.delete-source-at(source-index);
+    function action-delete-source(source-id: string) {
+        ImageSourceNative.delete-source-id(source-id);
         app-flow = AppFlow.MainMenu;
     }
 
