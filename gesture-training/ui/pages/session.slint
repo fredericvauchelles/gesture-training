@@ -9,7 +9,9 @@ component Timer inherits Rectangle {
     in property<length> timer_width: 80px;
     in property<length> button_width: 40px;
 
-    pure callback seconds_to_string(int) -> string;
+    /** Native Function */
+    pure callback seconds-to-string(int) -> string;
+    /** End Native Function */
 
     width: timer_width + 2 * button_width;
     height: 50px;
@@ -70,7 +72,7 @@ component Timer inherits Rectangle {
         
                 Text {
                     width: 48px;
-                    text: seconds_to_string(root.time_left);
+                    text: seconds-to-string(root.time_left);
                     color: Palette.foreground;
                     vertical-alignment: center;
                     horizontal-alignment: center;
@@ -108,10 +110,16 @@ component Timer inherits Rectangle {
     ]
 }
 
-export component SessionWindow inherits Window {
+export component SessionWindow inherits Rectangle {
     in property image <=> image.source;
 
     callback exit-session <=> button_quit.clicked;
+
+    in-out property<bool> expand-menu: false;
+
+    public function start-session() {
+        expand-menu = false;
+    }
 
     image := Image {}
 
@@ -123,12 +131,12 @@ export component SessionWindow inherits Window {
         y: 8px;
 
         clicked => {
-            button_quit.visible = !button_quit.visible;
+            expand-menu = !expand-menu;
         }
     }
 
-    button_quit := Button {
-        visible: false;
+    button-quit := Button {
+        visible: expand-menu;
         icon: Icons.square;
         width: 32px;
         height: 32px;
@@ -140,6 +148,5 @@ export component SessionWindow inherits Window {
     Timer {
         x: (root.width - self.width) * 0.5;
         y: root.height - self.height - 50px;
-        seconds_to_string(seconds) => { "00:00" }
     }
 }

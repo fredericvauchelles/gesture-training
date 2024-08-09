@@ -1,6 +1,10 @@
 import { Palette, StyleMetrics, VerticalBox, HorizontalBox, Switch, ListView } from "std-widgets.slint";
 import { RadioBox, Label, Icons, CustomPalette, Button, StatusIcon, StatusType, StatusData } from "../widgets/widgets.slint";
 
+export enum SourceType {
+    Folder,
+}
+
 export struct SourceData {
     enabled: bool,
     name: string,
@@ -13,7 +17,11 @@ component SourceView inherits Rectangle {
 
     callback open-editor <=> open-editor-button.clicked;
 
-    in-out property<SourceData> data;
+    in-out property<SourceData> data: {
+        status: {
+            type: StatusType.Valid
+        }
+    };
 
     height: CustomPalette.preferred-field-height;
     background: Palette.control-background;
@@ -76,6 +84,7 @@ export component MainMenu inherits VerticalBox {
         image-count: 10,
     };
 
+    callback start;
     callback show-add-source-folder;
     callback show-add-zip-file;
     callback open-source-editor(SourceData, int);
@@ -233,6 +242,7 @@ export component MainMenu inherits VerticalBox {
             enabled: root.enabled && selection-data.status.type == StatusType.Valid;
 
             text: "Start (" + selection-data.image-count + ")";
+            clicked => { start(); }
         }
 
         StatusIcon {

@@ -1,14 +1,22 @@
 import { Button, VerticalBox, StandardListView, HorizontalBox, Palette, StyleMetrics } from "std-widgets.slint";
 import { MainMenu } from "main-menu.slint";
 import { RadioBox, EditSourceFolderDialog, CustomPalette } from "../widgets/widgets.slint";
+import { SessionWindow } from "session.slint";
 
 enum AppFlow {
     MainMenu,
+    Session,
     EditSource_Folder,
 }
 
 export component AppWindow inherits Window {
     in-out property<AppFlow> app-flow: AppFlow.MainMenu;
+
+    /** Native Functions */
+    callback delete-source-at(int);
+    callback on-session-start();
+    callback on-session-stop();
+    /** End Native Functions */
 
     title: "Gesture Training";
     Rectangle {
@@ -24,8 +32,15 @@ export component AppWindow inherits Window {
             height: main-menu.preferred-height;
 
             main-menu := MainMenu {
+                opacity: 0;
+                animate opacity {
+                    duration: 200ms;
+                }
+                
+                enabled: false;
+                start => { action-start-session(); }
                 show-add-source-folder => { action-add-source-folder(); }
-                open-source-editor(data, index) => { action-edit-source-folder(); }
+                open-source-editor(data, index) => { action-edit-source-folder(index); }
             } 
         }
     }
@@ -51,8 +66,31 @@ export component AppWindow inherits Window {
 
             dialog-edit-source-folder := EditSourceFolderDialog {
                 opacity: 0;
-                cancel => { app-flow = AppFlow.MainMenu; }
+                cancel => { action-main-menu(); }
+                delete(index) => { action-delete-source(index); }
+                on-add-or-save => { action-main-menu(); }
+
+                // Test
+                get-folder-source-data-from-index(int) => {
+                    {
+                        name: "Test",
+                    }
+                }
+                is-folder-source-data-from-index-valid(int) => {
+                    true
+                }
+                // ~Test
             }
+        }
+    }
+
+    session := SessionWindow {
+        opacity: 0;
+
+        exit-session => { action-exit-session(); }
+
+        animate opacity {
+            duration: 200ms;
         }
     }
 
@@ -89,7 +127,11 @@ export component AppWindow inherits Window {
             }
         }
         main-menu when app-flow == AppFlow.MainMenu: {
+            main-menu.opacity: 1;
             main-menu.enabled: true;
+        }
+        session when app-flow == AppFlow.Session: {
+            session.opacity: 1;
         }
     ]
 
@@ -100,13 +142,34 @@ export component AppWindow inherits Window {
         dialog-edit-source-folder.preferred-height
     }
 
+    function action-main-menu() {
+        app-flow = AppFlow.MainMenu;
+    }
+
     function action-add-source-folder() {
         dialog-edit-source-folder.setup-add();
         app-flow = AppFlow.EditSource_Folder;
     }
 
-    function action-edit-source-folder() {
-        dialog-edit-source-folder.setup-edit();
-        app-flow = AppFlow.EditSource_Folder;
+    function action-edit-source-folder(source-index: int) {
+        if (dialog-edit-source-folder.setup-edit(source-index)) {
+            app-flow = AppFlow.EditSource_Folder;
+        }
+    }
+
+    function action-delete-source(source-index: int) {
+        delete-source-at(source-index);
+        app-flow = AppFlow.MainMenu;
+    }
+
+    function action-start-session() {
+        on-session-start();
+        session.start-session();
+        app-flow = AppFlow.Session;
+    }
+
+    function action-exit-session() {
+        on-session-stop();
+        app-flow = AppFlow.MainMenu;
     }
 }

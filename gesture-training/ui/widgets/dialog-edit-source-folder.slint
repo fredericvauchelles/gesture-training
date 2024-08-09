@@ -2,21 +2,52 @@ import { Palette, HorizontalBox, VerticalBox } from "std-widgets.slint";
 import { CustomDialog } from "dialog.slint";
 import { Button } from "button.slint";
 import { Label } from "label.slint";
+import { StatusData, StatusType } from "status-icon.slint";
 import { CustomPalette, Icons } from "styling.slint";
 
+export struct FolderSourceData {
+    id: int,
+    name: string,
+    path: string,
+    image-count: int,
+    status: StatusData,
+}
+
 export component EditSourceFolderDialog inherits VerticalBox {
-    callback accept;
+    callback on-add-or-save;
     callback cancel;
+    callback delete(int);
+
+    /** Native Functions */
+    callback get-folder-source-data-from-index(int) -> FolderSourceData;
+    callback is-folder-source-data-from-index-valid(int) -> bool;
+    callback add-or-save-folder-source(FolderSourceData);
     callback open-file-dialog <=> open_file_dialog_button.clicked;
+    /** End Native Functions */
 
     out property<bool> is-add;
+    in-out property<FolderSourceData> source;
 
     public function setup-add() {
         is-add = true;
+        source = {
+            name: "Unnamed",
+            path: "path/to/folder",
+            image-count: 0,
+            status: {
+                type: StatusType.Unknown
+            },
+        };
     }
 
-    public function setup-edit() {
+    public function setup-edit(source-index: int) -> bool {
+        if (!is-folder-source-data-from-index-valid(source-index)) {
+            return false;
+        }
+
+        source = get-folder-source-data-from-index(source-index);
         is-add = false;
+        return true;
     }
 
     Rectangle {
@@ -50,7 +81,7 @@ export component EditSourceFolderDialog inherits VerticalBox {
                     TextInput {
                         horizontal-alignment: right;
                         vertical-alignment: center;
-                        text: "Source Name";
+                        text: source.name;
                         color: Palette.control-foreground.darker(25%);
                     }
                     Rectangle {
@@ -60,6 +91,7 @@ export component EditSourceFolderDialog inherits VerticalBox {
             }
 
             Rectangle {
+                height: CustomPalette.preferred-field-height;
                 background: Palette.control-background;
                 border-width: CustomPalette.border-width;
                 border-color: Palette.background;
@@ -72,7 +104,7 @@ export component EditSourceFolderDialog inherits VerticalBox {
                     Text {
                         horizontal-alignment: right;
                         vertical-alignment: center;
-                        text: "/path/to/folder";
+                        text: source.path;
                         color: Palette.control-foreground.darker(25%);
                     }
                     open_file_dialog_button := Button {
@@ -85,6 +117,7 @@ export component EditSourceFolderDialog inherits VerticalBox {
             }
 
             Rectangle {
+                height: CustomPalette.preferred-field-height;
                 background: Palette.control-background;
                 border-width: CustomPalette.border-width;
                 border-color: Palette.background;
@@ -97,12 +130,40 @@ export component EditSourceFolderDialog inherits VerticalBox {
                     Text {
                         horizontal-alignment: right;
                         vertical-alignment: center;
-                        text: "?";
+                        text: source.status.type == StatusType.Valid 
+                            ? source.image-count 
+                            : "?";
                         color: Palette.control-foreground.darker(25%);
                     }
                     Rectangle {
                         width: CustomPalette.preferred-icon-size;
                         height: CustomPalette.preferred-icon-size;
+                    }
+                }
+            }
+
+            if !root.is-add : Rectangle {
+                height: CustomPalette.preferred-field-height;
+                background: Palette.control-background;
+                border-width: CustomPalette.border-width;
+                border-color: Palette.background;
+
+                HorizontalBox {
+                    padding-right: 0;
+                    padding-top: 0;
+                    padding-bottom: 0;
+                    Text {
+                        text: "Delete";
+                        vertical-alignment: center;
+                    }
+                    Button {
+                        width: CustomPalette.preferred-field-height * 3;
+                        icon: Icons.minus-circle;
+                        padding: 0;
+                        text: "Delete";
+                        content-color: red;
+                        border-radius: 0;
+                        clicked => { delete(source.id); }
                     }
                 }
             }
@@ -124,13 +185,15 @@ export component EditSourceFolderDialog inherits VerticalBox {
                         border-top-right-radius: 0;
                         border-bottom-right-radius: 0;
 
-                        
-
-                        clicked => { accept(); }
+                        clicked => { 
+                            add-or-save-folder-source(source);
+                            on-add-or-save();
+                        }
                     }
                     Button {
                         icon: Icons.minus-circle;
-                        text: is-add ? "Cancel" : "Delete";
+                        text: "Cancel";
+                        content-color: Palette.foreground;
                         border-top-left-radius: 0;
                         border-top-right-radius: 0;
                         border-bottom-left-radius: 0;
