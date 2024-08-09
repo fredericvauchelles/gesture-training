@@ -24,8 +24,8 @@ export component AppWindow inherits Window {
             height: main-menu.preferred-height;
 
             main-menu := MainMenu {
-                show-add-source-folder => { app-flow = AppFlow.EditSource_Folder; }
-                open-source-editor(data, index) => {  app-flow = AppFlow.EditSource_Folder; }
+                show-add-source-folder => { action-add-source-folder(); }
+                open-source-editor(data, index) => { action-edit-source-folder(); }
             } 
         }
     }
@@ -98,5 +98,15 @@ export component AppWindow inherits Window {
     }
     pure function modal-height() -> length {
         dialog-edit-source-folder.preferred-height
+    }
+
+    function action-add-source-folder() {
+        dialog-edit-source-folder.setup-add();
+        app-flow = AppFlow.EditSource_Folder;
+    }
+
+    function action-edit-source-folder() {
+        dialog-edit-source-folder.setup-edit();
+        app-flow = AppFlow.EditSource_Folder;
     }
 }

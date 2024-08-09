@@ -5,7 +5,8 @@ export component Button inherits Rectangle {
     in property<bool> enabled: true;
     in-out property<image> icon;
     in-out property<string> text;
-    in-out property<bool> colorize-icon: false;
+
+    in-out property<brush> content-color: Palette.foreground;
 
     callback clicked;
 
@@ -27,28 +28,29 @@ export component Button inherits Rectangle {
             width: 20px;
             source <=> root.icon;
             image-fit: contain;
-            colorize: Palette.foreground;
+            colorize: content-color;
         } 
         if (root.text != ""): Text { 
-            color: Palette.foreground;
+            color: content-color;
+            vertical-alignment: center;
             text: root.text;
 
             states [
                 disabled-pressed when !enabled && touch.pressed: {
-                    color: Palette.foreground.darker(25%);
+                    color: content-color.darker(25%);
                 }
                 disabled-hover when !enabled && touch.has-hover: {
-                    color: Palette.alternate-foreground.darker(25%);
+                    color: content-color;
                 }
                 disabled when !enabled: {
-                    color: Palette.foreground.darker(25%);
+                    color: content-color.darker(25%);
                 }
 
                 normal-pressed when touch.pressed: {
-                    color : Palette.foreground;
+                    color : content-color;
                 }
                 normal-hover when touch.has-hover: {
-                    color : Palette.alternate-foreground;
+                    color : content-color.brighter(25%);
                 }
             ]
         }

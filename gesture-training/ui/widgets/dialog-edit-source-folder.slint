@@ -9,11 +9,30 @@ export component EditSourceFolderDialog inherits VerticalBox {
     callback cancel;
     callback open-file-dialog <=> open_file_dialog_button.clicked;
 
+    out property<bool> is-add;
+
+    public function setup-add() {
+        is-add = true;
+    }
+
+    public function setup-edit() {
+        is-add = false;
+    }
+
     Rectangle {
         border-radius: CustomPalette.border;
 
         VerticalBox {
             spacing: 0;
+
+            Label {
+                text: is-add ? "Add Folder" : "Edit Folder";
+            }
+
+            // space
+            Rectangle {
+                height: 4px;
+            }
             
             Rectangle {
                 height: CustomPalette.preferred-field-height;
@@ -100,14 +119,18 @@ export component EditSourceFolderDialog inherits VerticalBox {
                     Button {
                         height: CustomPalette.preferred-field-height;
                         icon: Icons.plus-circle;
+                        text: is-add ? "Add" : "Save";
                         border-top-left-radius: 0;
                         border-top-right-radius: 0;
                         border-bottom-right-radius: 0;
+
+                        
 
                         clicked => { accept(); }
                     }
                     Button {
                         icon: Icons.minus-circle;
+                        text: is-add ? "Cancel" : "Delete";
                         border-top-left-radius: 0;
                         border-top-right-radius: 0;
                         border-bottom-left-radius: 0;
