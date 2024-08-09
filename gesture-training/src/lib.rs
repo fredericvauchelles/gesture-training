@@ -1,17 +1,10 @@
-use slint_includes::*;
+use crate::app::App;
 
-use crate::app_data::AppData;
-
-mod app_data;
-mod slint_includes;
+mod app;
+mod sg;
 
 pub fn start_app() -> Result<(), slint::PlatformError> {
-    let app_window = AppWindow::new()?;
-
-    let app_data = AppData::new();
-    AppData::bind_window(&app_data, &app_window);
-
-    app_window.run()
+    App::run()
 }
 
 #[allow(dead_code)]
