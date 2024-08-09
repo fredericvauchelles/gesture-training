@@ -2,11 +2,12 @@ import { Palette, HorizontalBox } from "std-widgets.slint";
 import { CustomPalette } from "styling.slint";
 
 export component Button inherits Rectangle {
+    in property<bool> enabled: true;
     in-out property<image> icon;
     in-out property<string> text;
     in-out property<bool> colorize-icon: false;
 
-    callback clicked <=> touch.clicked;
+    callback clicked;
 
     min-height: CustomPalette.border;
     min-width: max(32px, layout.min-width);
@@ -33,6 +34,16 @@ export component Button inherits Rectangle {
             text: root.text;
 
             states [
+                disabled-pressed when !enabled && touch.pressed: {
+                    color: Palette.foreground.darker(25%);
+                }
+                disabled-hover when !enabled && touch.has-hover: {
+                    color: Palette.alternate-foreground.darker(25%);
+                }
+                disabled when !enabled: {
+                    color: Palette.foreground.darker(25%);
+                }
+
                 normal-pressed when touch.pressed: {
                     color : Palette.foreground;
                 }
@@ -42,9 +53,25 @@ export component Button inherits Rectangle {
             ]
         }
     }
-    touch := TouchArea {}
+    touch := TouchArea {
+        clicked => {
+            if enabled {
+                root.clicked();
+            }
+        }
+    }
 
     states [
+        disabled-pressed when !enabled && touch.pressed: {
+            background: Palette.background.darker(25%);
+        }
+        disabled-hover when !enabled && touch.has-hover: {
+            background: Palette.alternate-background.darker(25%);
+        }
+        disabled when !enabled: {
+            background: Palette.control-background.darker(25%);
+        }
+
         normal-pressed when touch.pressed: {
             background: Palette.background;
         }

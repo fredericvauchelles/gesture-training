@@ -1,48 +1,71 @@
 import { Button, VerticalBox, StandardListView, HorizontalBox, Palette, StyleMetrics } from "std-widgets.slint";
 import { MainMenu } from "main-menu.slint";
-import { RadioBox, AddFolderDialog } from "../widgets/widgets.slint";
+import { RadioBox, EditSourceFolderDialog, CustomPalette } from "../widgets/widgets.slint";
 
-component ModalDialogLayer inherits Window {
-    visible: false;
-    Rectangle {
-        opacity: 0.9;
-        background: Palette.background;
-    }
-    VerticalBox {
-        alignment: center;
-        x: 5% * root.width;
-        width: 90% * root.width;
-        min-height: 100px;
-
-        dialog_add_folder := AddFolderDialog { 
-            cancel => { close-modal(); } 
-        } 
-    }
-
-    function close-modal() {
-        self.visible = false;
-
-        dialog_add_folder.visible = false;
-    }
-
-    public function show-add-folder() {
-        self.visible = true; 
-
-        dialog_add_folder.show();
-    }
+enum AppFlow {
+    MainMenu,
+    EditSource_Folder,
 }
 
 export component AppWindow inherits Window {
+    in-out property<AppFlow> app-flow: AppFlow.MainMenu;
+
     title: "Gesture Training";
     Rectangle {
         background: Palette.alternate-background;
     }
-    MainMenu {
-        show-add-folder => { layer_modal.show-add-folder(); }
-        open-source-editor => { layer_modal.show-add-folder(); }
-    } 
-    layer_modal := ModalDialogLayer {
-        width: root.width;
-        height: root.height;
+
+    Rectangle {
+        width: 100%;
+        height: 100%;
+
+        Rectangle {
+            width: min(CustomPalette.preferred-form-width, root.width);
+            height: main-menu.preferred-height;
+
+            main-menu := MainMenu {
+                show-add-source-folder => { app-flow = AppFlow.EditSource_Folder; }
+                open-source-editor(data, index) => {  app-flow = AppFlow.EditSource_Folder; }
+            } 
+        }
     }
+
+    Rectangle {
+        width: 100%;
+        height: 100%;
+
+        modal-overlay := Rectangle {
+            visible: false;
+            opacity: 0.9;
+            background: Palette.background;
+        }
+
+        modal-background := Rectangle {
+            visible: false;
+            
+            background: Palette.alternate-background;
+            border-color: Palette.background;
+            border-radius: CustomPalette.border;
+
+            width: min(CustomPalette.preferred-form-width, root.width);
+            height: dialog-edit-source-folder.preferred-height;
+
+            dialog-edit-source-folder := EditSourceFolderDialog {
+                visible: false;
+                cancel => { app-flow = AppFlow.MainMenu; }
+            }
+        }
+    }
+
+    states [
+        edit-source-folder when app-flow == AppFlow.EditSource_Folder: {
+            modal-overlay.visible: true;
+            modal-background.visible: true;
+
+            dialog-edit-source-folder.visible: true;
+        }
+        main-menu when app-flow == AppFlow.MainMenu: {
+            main-menu.enabled: true;
+        }
+    ]
 }

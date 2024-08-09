@@ -4,7 +4,7 @@ import { Button } from "button.slint";
 import { Label } from "label.slint";
 import { CustomPalette, Icons } from "styling.slint";
 
-component AddFolderDialogForm inherits VerticalBox {
+export component EditSourceFolderDialog inherits VerticalBox {
     callback accept;
     callback cancel;
     callback open-file-dialog <=> open_file_dialog_button.clicked;
@@ -113,34 +113,6 @@ component AddFolderDialogForm inherits VerticalBox {
                         border-bottom-left-radius: 0;
 
                         clicked => { cancel(); }
-                    }
-                }
-            }
-        }
-    }
-}
-
-export component AddFolderDialog inherits CustomDialog {
-
-    HorizontalBox {
-        alignment: center;
-        Rectangle {
-            max-width: CustomPalette.preferred-form-width;
-            preferred-width: CustomPalette.preferred-form-width;
-
-            VerticalBox {
-                alignment: center;
-                Rectangle {
-                    max-height: 500px;
-                    background: Palette.alternate-background;
-                    border-color: Palette.background;
-                    border-radius: CustomPalette.border;
-                    
-                    VerticalBox {
-                        form := AddFolderDialogForm{
-                            accept => { root.accept(); }
-                            cancel => { root.cancel(); }
-                        }
                     }
                 }
             }

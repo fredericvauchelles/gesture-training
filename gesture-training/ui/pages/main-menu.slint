@@ -1,15 +1,23 @@
 import { Palette, StyleMetrics, VerticalBox, HorizontalBox, Switch, ListView } from "std-widgets.slint";
 import { RadioBox, Label, Icons, CustomPalette, Button } from "../widgets/widgets.slint";
 
+export enum SourceDataStatus {
+    Valid,
+    HasError,
+    Unknown
+}
+
 export struct SourceData {
     enabled: bool,
     name: string,
     image_count: int,
-    is_valid: bool,
+    status: SourceDataStatus,
 }
 
 component SourceView inherits Rectangle {
-    callback open-editor <=> open_editor_button.clicked;
+    in property<bool> enabled: true;
+
+    callback open-editor <=> open-editor-button.clicked;
 
     in-out property<SourceData> data;
 
@@ -25,44 +33,78 @@ component SourceView inherits Rectangle {
         padding-bottom: 0;
 
         Switch {
-            enabled: data.enabled;
+            checked: data.enabled;
+            enabled <=> root.enabled;
         }
         text := Text {
             text: data.name;
             vertical-alignment: center;
             horizontal-alignment: left;
         }
-        image_count := Text {
+        image-count := Text {
             vertical-alignment: center;
             horizontal-alignment: right;
             width: 50px;
-            text: data.image_count;
+            text: get-image-count(data);
         }
         Rectangle {
             width: CustomPalette.preferred-icon-size;
             Image {
                 width: CustomPalette.preferred-icon-size * 0.75;
-                source: data.is_valid ? Icons.check-circle : Icons.alert-triangle;
-                colorize: data.is_valid ? Palette.foreground : yellow;
+                source: get-status-icon(data.status);
+                colorize: get-status-brush(data.status);
             }
         }
-        open_editor_button := Button {
+        open-editor-button := Button {
+            enabled <=> root.enabled;
             icon: Icons.more-horizontal-square;
             border-radius: 0;
             width: 50px;
         }
     }
+
+    pure function get-status-icon(status: SourceDataStatus) -> image {
+        if (status == SourceDataStatus.Valid) {
+            Icons.check-circle
+        } else if (status == SourceDataStatus.HasError) {
+            Icons.alert-triangle
+        } else {
+            Icons.refresh
+        }
+    }
+
+    pure function get-status-brush(status: SourceDataStatus) -> brush {
+        if (status == SourceDataStatus.Valid) {
+            Palette.foreground
+        } else if (status == SourceDataStatus.HasError) {
+            yellow
+        } else {
+            Palette.foreground
+        }
+    }
+
+    pure function get-image-count(data: SourceData) -> string {
+        if (data.status == SourceDataStatus.Valid) {
+            data.image_count
+        } else {
+            "?"
+        }
+    }
 }
 
-component MainMenuForm inherits VerticalBox {
-    callback show-add-folder <=> button_add_folder.clicked;
+export component MainMenu inherits VerticalBox {
+    in property<bool> enabled: false;
+
+    callback show-add-source-folder;
+    callback show-add-zip-file;
     callback open-source-editor(SourceData, int);
 
     in property<int> total_image_count:0;
 
     in-out property<[SourceData]> datas : [
-        { enabled: true, name: "Clothed misc", image_count: 264, is_valid: true },
-        { enabled: true, name: "Chaaron", image_count: 513 },
+        { enabled: true, name: "Clothed misc", image_count: 264, status: SourceDataStatus.Valid },
+        { enabled: false, name: "Chaaron", image_count: 513, status: SourceDataStatus.HasError },
+        { enabled: true, name: "Other Test", image_count: 164, status: SourceDataStatus.Unknown },
     ];
 
     VerticalBox {
@@ -81,6 +123,7 @@ component MainMenuForm inherits VerticalBox {
             }
         }
         for data[index] in datas: SourceView {
+            enabled <=> root.enabled;
             data: data;
             open-editor => {
                 open-source-editor(data, index);
@@ -105,14 +148,20 @@ component MainMenuForm inherits VerticalBox {
                 }
             }
 
-            button_add_folder := Button {
+            Button {
+                enabled <=> root.enabled;
+
                 border-radius: 0;
 
                 icon: Icons.folder;
                 colorize-icon: true;
                 height: CustomPalette.preferred-field-height;
+
+                clicked => { root.show-add-source-folder(); }
             }
-            button_add_zip := Button {
+            Button {
+                enabled <=> root.enabled;
+
                 border-top-left-radius: 0;
                 border-top-right-radius: 0;
                 border-bottom-left-radius: 0;
@@ -120,6 +169,8 @@ component MainMenuForm inherits VerticalBox {
                 icon: Icons.zip-file;
                 colorize-icon: true;
                 height: CustomPalette.preferred-field-height;
+
+                clicked => { root.show-add-zip-file(); }
             }
         }
         
@@ -147,6 +198,8 @@ component MainMenuForm inherits VerticalBox {
                 }
             }
             RadioBox {
+                enabled <=> root.enabled;
+
                 border-top-right: true;
                 height: CustomPalette.preferred-field-height;
                 selected-value: 5;
@@ -178,6 +231,8 @@ component MainMenuForm inherits VerticalBox {
                 }
             }
             RadioBox {
+                enabled <=> root.enabled;
+
                 border-bottom-right: true;
                 height: CustomPalette.preferred-field-height;
                 selected-value: 30;
@@ -198,30 +253,9 @@ component MainMenuForm inherits VerticalBox {
         height: CustomPalette.preferred-field-height;
 
         Button {
+            enabled <=> root.enabled;
+
             text: "Start (" + total_image_count + ")";
-        }
-    }
-}
-
-export component MainMenu inherits Rectangle {
-    callback show-add-folder <=> form.show-add-folder;
-    callback open-source-editor <=> form.open-source-editor;
-
-    HorizontalBox {
-        alignment: center;
-        Rectangle {
-            max-width: CustomPalette.preferred-form-width;
-            preferred-width: CustomPalette.preferred-form-width;
-
-            VerticalBox {
-                alignment: center;
-                Rectangle {
-    
-                    VerticalBox {
-                        form := MainMenuForm{}
-                    }
-                }
-            }
         }
     }
 }
