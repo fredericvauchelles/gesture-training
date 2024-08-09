@@ -2,8 +2,8 @@ import { VerticalBox, HorizontalBox, Palette, Slider, StyleMetrics } from "std-w
 import { CustomPalette, Icons, Button } from "../widgets/widgets.slint";
 
 component Timer inherits Rectangle {
-    in property<int> time_left: 0;
-    in property<int> time_total: 90;
+    in property<int> time-left: 0;
+    in property<int> time-total: 90;
     in-out property<bool> is-playing: false;
 
     in property<length> timer-width: 80px;
@@ -72,7 +72,7 @@ component Timer inherits Rectangle {
         
                 Text {
                     width: 48px;
-                    text: seconds-to-string(root.time_left);
+                    text: seconds-to-string(root.time-left);
                     color: Palette.foreground;
                     vertical-alignment: center;
                     horizontal-alignment: center;
@@ -97,7 +97,7 @@ component Timer inherits Rectangle {
     }
 
     pure function progress() -> float {
-        1.0 - (root.time_left / (root.time_total * 1.0));
+        1.0 - (root.time-left / (root.time-total * 1.0));
     }
 
     states [
