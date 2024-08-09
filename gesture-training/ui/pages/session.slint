@@ -4,16 +4,16 @@ import { CustomPalette, Icons, Button } from "../widgets/widgets.slint";
 component Timer inherits Rectangle {
     in property<int> time_left: 0;
     in property<int> time_total: 90;
-    in-out property<bool> is_playing: false;
+    in-out property<bool> is-playing: false;
 
-    in property<length> timer_width: 80px;
-    in property<length> button_width: 40px;
+    in property<length> timer-width: 80px;
+    in property<length> button-width: 40px;
 
     /** Native Function */
     pure callback seconds-to-string(int) -> string;
     /** End Native Function */
 
-    width: timer_width + 2 * button_width;
+    width: timer-width + 2 * button-width;
     height: 50px;
 
     Rectangle {
@@ -46,25 +46,25 @@ component Timer inherits Rectangle {
 
         Button {
             icon: Icons.rewind;
-            width: button_width;
+            width: button-width;
             border-top-right-radius: 0;
             border-top-left-radius: 0;
             border-bottom-right-radius: 0;
         }
 
-        timer_rect := Rectangle {
-            width: timer_width;
+        timer-rect := Rectangle {
+            width: timer-width;
             background: Palette.alternate-background;
             border-width: 1px;
             border-color: Palette.background.darker(25%);
 
             touch := TouchArea {
-                width: timer_width;
-                clicked => { root.is_playing = !root.is_playing; }
+                width: timer-width;
+                clicked => { root.is-playing = !root.is-playing; }
             }
 
             HorizontalBox {
-                width: timer_width;
+                width: timer-width;
         
                 spacing: 0;
                 padding: 0;
@@ -81,7 +81,7 @@ component Timer inherits Rectangle {
             
                 Image {
                     width: 20px;
-                    source: root.is_playing ? Icons.pause : Icons.play;
+                    source: root.is-playing ? Icons.pause : Icons.play;
                     colorize: Palette.foreground;
                 }
             }
@@ -89,7 +89,7 @@ component Timer inherits Rectangle {
 
         Button {
             icon: Icons.fast-forward;
-            width: button_width;
+            width: button-width;
             border-top-right-radius: 0;
             border-top-left-radius: 0;
             border-bottom-left-radius: 0;
@@ -102,10 +102,10 @@ component Timer inherits Rectangle {
 
     states [
         hover when touch.pressed: {
-            timer_rect.background: Palette.background;
+            timer-rect.background: Palette.background;
         }
         hover when touch.has-hover: {
-            timer_rect.background: Palette.control-background;
+            timer-rect.background: Palette.control-background;
         }
     ]
 }
