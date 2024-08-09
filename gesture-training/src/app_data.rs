@@ -1,7 +1,6 @@
 use std::cell::RefCell;
 use std::path::PathBuf;
 use std::rc::Rc;
-use std::str::FromStr;
 use std::sync::Arc;
 
 use slint::{ModelRc, VecModel};
@@ -18,18 +17,18 @@ pub struct FolderImageSource {
     status: StatusData,
 }
 impl FolderImageSource {
-    pub fn new_from(source: FolderSourceData) -> Self {
-        Self {
-            id: Uuid::new_v4(),
-            name: source.name.into(),
-            path: source.path.into(),
-            image_count: 0usize,
-            status: StatusData {
-                r#type: StatusType::Unknown,
-                error: "".into(),
-            },
-        }
-    }
+    // pub fn new_from(source: FolderSourceData) -> Self {
+    //     Self {
+    //         id: Uuid::new_v4(),
+    //         name: source.name.into(),
+    //         path: source.path.into(),
+    //         image_count: None,
+    //         status: StatusData {
+    //             r#type: StatusType::Unknown,
+    //             error: "".into(),
+    //         },
+    //     }
+    // }
 }
 impl From<FolderImageSource> for FolderSourceData {
     fn from(value: FolderImageSource) -> Self {
@@ -77,8 +76,8 @@ impl AppData {
     }
 
     pub fn add_folder_source(&mut self, data: FolderSourceData) {
-        let image_source = ImageSource::Folder(FolderImageSource::new_from(data));
-        let source = SourceData::from(&image_source);
+        // let image_source = ImageSource::Folder(FolderImageSource::new_from(data));
+        // let source = SourceData::from(&image_source);
     }
 
     pub fn try_remove_image_source_id(&mut self, id: Uuid) -> Result<ImageSource, anyhow::Error> {
@@ -103,68 +102,68 @@ impl AppData {
         app_window.set_source_datas(app_data.borrow().app_source_datas());
 
         // ImageSourceNative.delete-source-at
-        {
-            let app_data_1 = app_data.clone();
-            app_window
-                .global::<ImageSourceNative>()
-                .on_delete_source_id(move |id| {
-                    match Uuid::from_str(&id)
-                        .map_err(anyhow::Error::from)
-                        .and_then(|id| {
-                            app_data_1
-                                .try_borrow_mut()
-                                .map(|app_data| (id, app_data))
-                                .map_err(anyhow::Error::from)
-                        })
-                        .and_then(|(id, mut app_data)| {
-                            app_data
-                                .try_remove_image_source_id(id)
-                                .map_err(anyhow::Error::from)
-                        }) {
-                        Ok(_) => {}
-                        Err(error) => {
-                            eprintln!("{}", error)
-                        }
-                    }
-                });
-        }
-
-        // SourceFolderNative.get-folder-source-data-from-index
-        {
-            let app_data_1 = app_data.clone();
-            app_window
-                .global::<SourceFolderNative>()
-                .on_get_folder_source_data_from_id(move |id| {
-                    Uuid::from_str(&id)
-                        .map_err(anyhow::Error::from)
-                        .and_then(|id| {
-                            app_data_1
-                                .try_borrow()
-                                .map(|app_data| (id, app_data))
-                                .map_err(anyhow::Error::from)
-                        })
-                        .and_then(|(id, mut app_data)| {
-                            if let Some(ImageSource::Folder(folder)) = app_data.get_image_source(id)
-                            {
-                                return Ok(FolderSourceData::from(folder.clone()));
-                            }
-                            Ok(FolderSourceData::default())
-                        })
-                        .unwrap_or_else(|error| {
-                            eprintln!("{}", error);
-                            FolderSourceData::default()
-                        })
-                });
-        }
-
-        // SourceFolderNative.get-folder-source-data-from-index
-        {
-            let app_data_1 = app_data.clone();
-            app_window
-                .global::<SourceFolderNative>()
-                .on_add_or_save_folder_source(move |folder_source_data| {
-                    app_data_1.add_folder_source(folder_source_data)
-                });
-        }
+        // {
+        //     let app_data_1 = app_data.clone();
+        //     app_window
+        //         .global::<ImageSourceNative>()
+        //         .on_delete_source_id(move |id| {
+        //             match Uuid::from_str(&id)
+        //                 .map_err(anyhow::Error::from)
+        //                 .and_then(|id| {
+        //                     app_data_1
+        //                         .try_borrow_mut()
+        //                         .map(|app_data| (id, app_data))
+        //                         .map_err(anyhow::Error::from)
+        //                 })
+        //                 .and_then(|(id, mut app_data)| {
+        //                     app_data
+        //                         .try_remove_image_source_id(id)
+        //                         .map_err(anyhow::Error::from)
+        //                 }) {
+        //                 Ok(_) => {}
+        //                 Err(error) => {
+        //                     eprintln!("{}", error)
+        //                 }
+        //             }
+        //         });
+        // }
+        //
+        // // SourceFolderNative.get-folder-source-data-from-index
+        // {
+        //     let app_data_1 = app_data.clone();
+        //     app_window
+        //         .global::<SourceFolderNative>()
+        //         .on_get_folder_source_data_from_id(move |id| {
+        //             Uuid::from_str(&id)
+        //                 .map_err(anyhow::Error::from)
+        //                 .and_then(|id| {
+        //                     app_data_1
+        //                         .try_borrow()
+        //                         .map(|app_data| (id, app_data))
+        //                         .map_err(anyhow::Error::from)
+        //                 })
+        //                 .and_then(|(id, mut app_data)| {
+        //                     if let Some(ImageSource::Folder(folder)) = app_data.get_image_source(id)
+        //                     {
+        //                         return Ok(FolderSourceData::from(folder.clone()));
+        //                     }
+        //                     Ok(FolderSourceData::default())
+        //                 })
+        //                 .unwrap_or_else(|error| {
+        //                     eprintln!("{}", error);
+        //                     FolderSourceData::default()
+        //                 })
+        //         });
+        // }
+        //
+        // // SourceFolderNative.get-folder-source-data-from-index
+        // {
+        //     let app_data_1 = app_data.clone();
+        //     app_window
+        //         .global::<SourceFolderNative>()
+        //         .on_add_or_save_folder_source(move |folder_source_data| {
+        //             app_data_1.add_folder_source(folder_source_data)
+        //         });
+        // }
     }
 }

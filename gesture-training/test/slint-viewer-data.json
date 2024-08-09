@@ -1,5 +1,5 @@
 {
-  "source-datas": [
+  "image-source-selector-datas": [
     {
       "enabled": true,
       "name": "Clothed misc",
@@ -26,7 +26,7 @@
       }
     }
   ],
-  "selection-data": {
+  "prepare-session-data": {
     "image-count": 10,
     "status": {
       "type": "Valid"

@@ -1,18 +1,18 @@
 import { Palette, HorizontalBox } from "std-widgets.slint";
 import { CustomPalette, Icons } from "styling.slint";
 
-export enum StatusType {
+export enum StatusIconType {
     Valid,
     Error,
     Unknown
 }
-export struct StatusData {
-    type: StatusType,
+export struct StatusIconData {
+    type: StatusIconType,
     error: string,
 }
 
 export component StatusIcon inherits Rectangle {
-    in property<StatusData> data;
+    in property<StatusIconData> data;
 
     width: CustomPalette.preferred-icon-size * 0.75;
 
@@ -39,7 +39,7 @@ export component StatusIcon inherits Rectangle {
     }
     touch := TouchArea {
         clicked => {
-            if (data.type == StatusType.Error)
+            if (data.type == StatusIconType.Error)
             {
                 popup.show();
             }
@@ -52,20 +52,20 @@ export component StatusIcon inherits Rectangle {
         colorize: get-status-brush(data.type);
     }
 
-    pure function get-status-icon(status: StatusType) -> image {
-        if (status == StatusType.Valid) {
+    pure function get-status-icon(status: StatusIconType) -> image {
+        if (status == StatusIconType.Valid) {
             Icons.check-circle
-        } else if (status == StatusType.Error) {
+        } else if (status == StatusIconType.Error) {
             Icons.alert-triangle
         } else {
             Icons.refresh
         }
     }
 
-    pure function get-status-brush(status: StatusType) -> brush {
-        if (status == StatusType.Valid) {
+    pure function get-status-brush(status: StatusIconType) -> brush {
+        if (status == StatusIconType.Valid) {
             Palette.foreground
-        } else if (status == StatusType.Error) {
+        } else if (status == StatusIconType.Error) {
             yellow
         } else {
             Palette.foreground

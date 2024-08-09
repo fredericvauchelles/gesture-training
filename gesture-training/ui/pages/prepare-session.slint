@@ -1,87 +1,26 @@
-import { Palette, StyleMetrics, VerticalBox, HorizontalBox, Switch, ListView } from "std-widgets.slint";
-import { RadioBox, Label, Icons, CustomPalette, Button, StatusIcon, StatusType, StatusData } from "../widgets/widgets.slint";
+import { 
+    Palette, StyleMetrics, VerticalBox, HorizontalBox, Switch, ListView 
+} from "std-widgets.slint";
+import { 
+    RadioBox, Label, Icons, CustomPalette, Button, StatusIcon, StatusIconData, 
+    StatusIconType, ImageSourceSelector, ImageSourceSelectorEntryData
+} from "../widgets/widgets.slint";
 
-export enum SourceType {
-    Folder,
-}
+import { ImageSourceType } from "common.slint";
 
-export struct SourceData {
-    id: string,
-    enabled: bool,
-    name: string,
-    image-count: int,
-    status: StatusData,
-}
-
-component SourceView inherits Rectangle {
-    in property<bool> enabled: true;
-    in-out property<SourceData> data;
-
-    callback open-editor <=> open-editor-button.clicked;
-
-    height: CustomPalette.preferred-field-height;
-    background: Palette.control-background;
-    border-width: CustomPalette.border-width;
-    border-color: Palette.background;
-
-    HorizontalBox {
-        padding-left: CustomPalette.border * 2;
-        padding-right: 0;
-        padding-top: 0;
-        padding-bottom: 0;
-
-        Switch {
-            checked: data.enabled;
-            enabled <=> root.enabled;
-        }
-        text := Text {
-            text: data.name;
-            vertical-alignment: center;
-            horizontal-alignment: left;
-        }
-        image-count := Text {
-            vertical-alignment: center;
-            horizontal-alignment: right;
-            width: 50px;
-            text: get-image-count(data);
-        }
-        Rectangle {
-            width: CustomPalette.preferred-icon-size;
-            StatusIcon {
-                data: data.status;
-            }
-        }
-        open-editor-button := Button {
-            enabled <=> root.enabled;
-            icon: Icons.more-horizontal-square;
-            border-radius: 0;
-            width: 50px;
-        }
-    }
-
-    pure function get-image-count(data: SourceData) -> string {
-        if (data.status.type == StatusType.Valid) {
-            data.image-count
-        } else {
-            "?"
-        }
-    }
-}
-
-export struct SelectionData {
-    status: StatusData,
+export struct PrepareSessionData {
+    status: StatusIconData,
     image-count: int,
 }
 
-export component MainMenu inherits VerticalBox {
+export component PrepareSession inherits VerticalBox {
     in property<bool> enabled: false;
-    in property<SelectionData> selection-data;
-    in property<[SourceData]> datas;
+    in property<PrepareSessionData> prepare-session-data;
+    in property<[ImageSourceSelectorEntryData]> image-source-selector-datas;
 
-    callback start;
-    callback show-add-source-folder;
-    callback show-add-zip-file;
-    callback open-source-editor(SourceData);
+    callback start-session;
+    callback open-add-image-source(ImageSourceType);
+    callback open-image-source-editor <=> image-source-selector.open-image-source-editor;
 
     VerticalBox {
         spacing: 0;
@@ -98,12 +37,9 @@ export component MainMenu inherits VerticalBox {
                 text: "Image sources";
             }
         }
-        for data[index] in datas: SourceView {
+        image-source-selector := ImageSourceSelector {
             enabled <=> root.enabled;
-            data: data;
-            open-editor => {
-                open-source-editor(data);
-            }
+            datas <=> root.image-source-selector-datas;
         }
         HorizontalBox {
             spacing: 0;
@@ -132,7 +68,7 @@ export component MainMenu inherits VerticalBox {
                 icon: Icons.folder;
                 height: CustomPalette.preferred-field-height;
 
-                clicked => { root.show-add-source-folder(); }
+                clicked => { open-add-image-source(ImageSourceType.Folder); }
             }
             Button {
                 enabled <=> root.enabled;
@@ -144,7 +80,7 @@ export component MainMenu inherits VerticalBox {
                 icon: Icons.zip-file;
                 height: CustomPalette.preferred-field-height;
 
-                clicked => { root.show-add-zip-file(); }
+                clicked => { open-add-image-source(ImageSourceType.Archive); }
             }
         }
         
@@ -227,14 +163,14 @@ export component MainMenu inherits VerticalBox {
         height: CustomPalette.preferred-field-height;
 
         Button {
-            enabled: root.enabled && selection-data.status.type == StatusType.Valid;
+            enabled: root.enabled && prepare-session-data.status.type == StatusIconType.Valid;
 
-            text: "Start (" + selection-data.image-count + ")";
-            clicked => { start(); }
+            text: "Start (" + prepare-session-data.image-count + ")";
+            clicked => { start-session(); }
         }
 
         StatusIcon {
-            data: selection-data.status;
+            data: prepare-session-data.status;
         }
     }
 }
