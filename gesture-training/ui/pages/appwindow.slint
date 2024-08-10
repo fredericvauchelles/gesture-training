@@ -32,7 +32,7 @@ export component AppWindow inherits Window {
     in property<PreparedSessionData> prepared-session-data <=> prepare-session.prepared-session-data;
 
     /** Native */
-    public function edit-source-folder-request-asked-path-completed(id: int, new-path: string) {
+    public function dispatch-edit-source-folder-request-asked-path-completed(id: int, new-path: string) {
         edit-source-folder.request-asked-path-completed(id, new-path);
     }
     /** End Native */

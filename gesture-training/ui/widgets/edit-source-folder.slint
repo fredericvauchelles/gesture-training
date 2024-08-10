@@ -37,8 +37,6 @@ export component EditSourceFolder inherits VerticalBox {
 
     out property<string> name;
     out property<string> path;
-    in-out property<int> image-count;
-    in-out property<StatusIconType> status-type;
 
     out property<int> request-asked-path-id;
     public function request-asked-path-completed(id: int, new-path: string) {
@@ -53,8 +51,6 @@ export component EditSourceFolder inherits VerticalBox {
         data.id = "";
         name = "Unnamed";
         path = "path/to/folder";
-        image-count = 0;
-        status-type = StatusIconType.Unknown;
     }
 
     public function setup-edit(source-id: string) -> bool {
@@ -64,8 +60,6 @@ export component EditSourceFolder inherits VerticalBox {
         }
         name = data.name;
         path = data.path;
-        image-count = data.image-count;
-        status-type = data.status.type;
         
         is-add = false;
         return true;
@@ -139,30 +133,6 @@ export component EditSourceFolder inherits VerticalBox {
                         clicked => {
                             request-asked-path-id = EditSourceFolderNative.request-asked-path();
                         }
-                    }
-                }
-            }
-
-            Rectangle {
-                height: CustomPalette.preferred-field-height;
-                background: Palette.control-background;
-                border-width: CustomPalette.border-width;
-                border-color: Palette.background;
-
-                HorizontalBox {
-                    Text {
-                        text: "Image Count";
-                        vertical-alignment: center;
-                    }
-                    text-image-count := Text {
-                        horizontal-alignment: right;
-                        vertical-alignment: center;
-                        text: status-type == StatusIconType.Valid ? image-count : "?";
-                        color: Palette.control-foreground.darker(25%);
-                    }
-                    Rectangle {
-                        width: CustomPalette.preferred-icon-size;
-                        height: CustomPalette.preferred-icon-size;
                     }
                 }
             }

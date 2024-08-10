@@ -1,7 +1,6 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::str::FromStr;
-
 use rfd::AsyncFileDialog;
 pub use slint::ComponentHandle;
 use slint::SharedString;
@@ -78,6 +77,34 @@ impl AppCallback {
             .and_then(|v| v.try_into().ok())
             .unwrap_or_default()
     }
+    
+    fn on_request_asked_path(&self) -> i32 {
+        let id = self.app.source_folder().next_request_ask_path_id() as i32;
+        let ui = self.ui.clone();
+        let app_clone = self.app.clone();
+        let future = async move {
+            if let Some(selection) = AsyncFileDialog::new().pick_folder().await {
+                // try to store the selected path
+                if let Err(error) = app_clone.source_folder().set_edited_path(selection.path()) {
+                    app_clone.handle_error::<()>(Err(error));
+                } else {
+                    // update the ui
+                    ui.upgrade()
+                        .unwrap()
+                        .ui()
+                        .invoke_dispatch_edit_source_folder_request_asked_path_completed(
+                            id,
+                            selection.path().to_string_lossy().to_string().into(),
+                        );
+                }
+            }
+        };
+        self
+            .app
+            .handle_error(slint::spawn_local(future).map_err(anyhow::Error::from));
+
+        id
+    }
 
     pub(crate) fn on_delete_source_id(&self, id: SharedString) {
         fn execute(this: &AppCallback, id: SharedString) -> anyhow::Result<()> {
@@ -85,9 +112,9 @@ impl AppCallback {
             let uuid = Uuid::from_str(&id)?;
 
             if let Some(image_source) = backend.remove_image_source(&uuid) {
-                let diff = ImageSourceModification::Deleted(image_source.id().clone()).into();
+                let diff = ImageSourceModification::Deleted(*image_source.id()).into();
                 let mut ui = this.ui.upgrade().ok_or(anyhow::anyhow!(""))?;
-                ui.update_with_backend_modifications(&mut backend, &diff);
+                ui.update_with_backend_modifications(&backend, &diff);
             }
 
             Ok(())
@@ -135,30 +162,7 @@ impl App {
             let callback = app_callback.clone();
             ui.ui()
                 .global::<sg::EditSourceFolderNative>()
-                .on_request_asked_path(move || {
-                    let id = callback.app.source_folder().next_request_ask_path_id() as i32;
-                    let ui = callback.ui.clone();
-                    let app_clone = callback.app.clone();
-                    let future = async move {
-                        if let Some(selection) = AsyncFileDialog::new().pick_folder().await {
-                            app_clone.source_folder().set_edited_path(selection.path());
-
-                            // update the ui
-                            ui.upgrade()
-                                .unwrap()
-                                .ui()
-                                .invoke_edit_source_folder_request_asked_path_completed(
-                                    id,
-                                    selection.path().to_string_lossy().to_string().into(),
-                                );
-                        }
-                    };
-                    callback
-                        .app
-                        .handle_error(slint::spawn_local(future).map_err(anyhow::Error::from));
-
-                    id
-                });
+                .on_request_asked_path(move || callback.on_request_asked_path());
         }
 
         {
