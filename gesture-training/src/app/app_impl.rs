@@ -130,7 +130,7 @@ impl App {
             ui.ui()
                 .global::<sg::EditSourceFolderNative>()
                 .on_request_asked_path(move || {
-                    let id = callback.app.next_edit_source_folder_request_ask_path_id() as i32;
+                    let id = callback.app.source_folder().next_request_ask_path_id() as i32;
                     let ui = callback.ui.clone();
                     let future = async move {
                         if let Some(selection) = AsyncFileDialog::new().pick_folder().await {
