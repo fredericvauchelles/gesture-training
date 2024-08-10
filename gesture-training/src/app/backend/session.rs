@@ -10,6 +10,10 @@ impl SessionBackend {
     pub fn is_image_source_used(&self, uuid: Uuid) -> bool {
         self.used_sources.contains(&uuid)
     }
+    
+    pub fn image_source_used(&self) -> impl IntoIterator<Item = &Uuid> {
+        self.used_sources.iter()
+    }
 
     pub(super) fn add_image_source(&mut self, uuid: Uuid) -> bool {
         self.used_sources.insert(uuid)

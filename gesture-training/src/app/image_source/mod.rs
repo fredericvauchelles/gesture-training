@@ -33,6 +33,8 @@ impl ImageSourceCheck {
     pub fn status(&self) -> &ImageSourceStatus {
         &self.status
     }
+    
+    pub fn new(image_count: usize, status: ImageSourceStatus) -> Self { Self { image_count, status}}
 }
 
 impl From<ImageSourceStatus> for sg::StatusIconData {

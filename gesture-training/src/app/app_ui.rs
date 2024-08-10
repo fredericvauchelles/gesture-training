@@ -1,8 +1,14 @@
+use std::collections::HashSet;
 use std::rc::{Rc, Weak};
 
 use slint::{ComponentHandle, Model, VecModel};
 
-use crate::app::backend::{AppBackend, AppBackendModifications, ImageSourceModification, SessionModification};
+use crate::app::backend::{
+    AppBackend, AppBackendModifications, ImageSourceModification, SessionModification,
+};
+use crate::app::image_source::{
+    ImageSource, ImageSourceCheck, ImageSourceStatus, ImageSourceTrait,
+};
 use crate::sg;
 
 #[derive(Clone)]
@@ -86,13 +92,10 @@ impl AppUi {
                         None
                     }
                 })
-                .chain(modifications
-                        .session()
-                        .iter()
-                        .map(|modif| match modif {
-                            SessionModification::AddedImageSource(uuid) => uuid,
-                            SessionModification::RemovedImageSource(uuid) => uuid,
-                        }));
+                .chain(modifications.session().iter().map(|modif| match modif {
+                    SessionModification::AddedImageSource(uuid) => uuid,
+                    SessionModification::RemovedImageSource(uuid) => uuid,
+                }));
 
             for uuid in edits {
                 let uuid_str = uuid.to_string();
@@ -157,6 +160,70 @@ impl AppUi {
                 {
                     self.backend.image_source_selector_entries.remove(position);
                 }
+            }
+        }
+
+        // Prepared session data
+        {
+            let update = !modifications.session().is_empty() || {
+                let impacted_image_sources = modifications
+                    .image_sources()
+                    .iter()
+                    .map(|modification| modification.id())
+                    .collect::<HashSet<_>>();
+                backend
+                    .session()
+                    .image_source_used()
+                    .into_iter()
+                    .any(|uuid| impacted_image_sources.contains(uuid))
+            };
+
+            if update {
+                let status = backend
+                    .session()
+                    .image_source_used()
+                    .into_iter()
+                    .filter_map(|uuid| {
+                        backend
+                            .image_sources()
+                            .get_image_source(*uuid)
+                            .map(ImageSource::check)
+                    })
+                    .fold(ImageSourceCheck::default(), |acc, value| {
+                        match (acc.status(), value.status()) {
+                            (ImageSourceStatus::Unknown, _) => value.clone(),
+                            (
+                                ImageSourceStatus::Error(old_error),
+                                ImageSourceStatus::Error(new_error),
+                            ) => ImageSourceCheck::new(
+                                acc.image_count(),
+                                ImageSourceStatus::Error(old_error.clone() + new_error),
+                            ),
+                            (_, ImageSourceStatus::Error(new_error)) => ImageSourceCheck::new(
+                                acc.image_count(),
+                                ImageSourceStatus::Error(new_error.clone()),
+                            ),
+                            (ImageSourceStatus::Error(old_error), _) => ImageSourceCheck::new(
+                                acc.image_count(),
+                                ImageSourceStatus::Error(old_error.clone()),
+                            ),
+                            (ImageSourceStatus::Valid, ImageSourceStatus::Valid) => {
+                                ImageSourceCheck::new(
+                                    acc.image_count() + value.image_count(),
+                                    ImageSourceStatus::Valid,
+                                )
+                            }
+                            (ImageSourceStatus::Valid, _) => {
+                                ImageSourceCheck::new(acc.image_count(), ImageSourceStatus::Valid)
+                            }
+                        }
+                    });
+
+                self.ui.set_prepared_session_data(sg::PreparedSessionData {
+                    image_count: status.image_count() as i32,
+                    status: status.status().into(),
+                    image_duration: 30,
+                })
             }
         }
     }
