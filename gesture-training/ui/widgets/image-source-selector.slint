@@ -3,6 +3,10 @@ import { Button } from "button.slint";
 import { StatusIcon, StatusIconData, StatusIconType } from "status-icon.slint";
 import { Icons, CustomPalette } from "styling.slint";
 
+export global ImageSourceSelectorNative {
+    callback set-image-source-used(string, bool);
+}
+
 export struct ImageSourceSelectorEntryData {
     id: string,
     enabled: bool,
@@ -31,6 +35,10 @@ component ImageSourceSelectorEntryView inherits Rectangle {
         Switch {
             checked: data.enabled;
             enabled <=> root.enabled;
+
+            toggled => {
+                ImageSourceSelectorNative.set-image-source-used(data.id, self.checked)
+            }
         }
         text := Text {
             text: data.name;
