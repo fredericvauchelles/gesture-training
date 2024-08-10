@@ -53,10 +53,6 @@ impl AppUi {
         &self.ui
     }
 
-    pub(crate) fn backend(&self) -> &AppUiBackend {
-        &self.backend
-    }
-
     pub fn new() -> Result<Self, slint::PlatformError> {
         let ui = sg::AppWindow::new()?;
         let ui_backend = Rc::new(AppUiBackend::new());
@@ -90,17 +86,13 @@ impl AppUi {
                         None
                     }
                 })
-                .chain(
-                    modifications
+                .chain(modifications
                         .session()
                         .iter()
-                        .filter_map(|modif| {
-                            match modif {
-                                SessionModification::AddedImageSource(uuid) => Some(uuid),
-                                SessionModification::RemovedImageSource(uuid) => Some(uuid),
-                            }
-                        }),
-                );
+                        .map(|modif| match modif {
+                            SessionModification::AddedImageSource(uuid) => uuid,
+                            SessionModification::RemovedImageSource(uuid) => uuid,
+                        }));
 
             for uuid in edits {
                 let uuid_str = uuid.to_string();
@@ -108,7 +100,7 @@ impl AppUi {
                     .backend
                     .image_source_selector_entries
                     .iter()
-                    .position(|item| &item.id == &uuid_str)
+                    .position(|item| item.id == uuid_str)
                 {
                     let image_source = backend.image_sources().get_image_source(*uuid).expect("");
 
@@ -161,7 +153,7 @@ impl AppUi {
                     .backend
                     .image_source_selector_entries
                     .iter()
-                    .position(|entry| &entry.id == &uuid_str)
+                    .position(|entry| entry.id == uuid_str)
                 {
                     self.backend.image_source_selector_entries.remove(position);
                 }
