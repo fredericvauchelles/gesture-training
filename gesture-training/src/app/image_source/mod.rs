@@ -77,7 +77,7 @@ pub trait ImageSourceTrait {
     fn name(&self) -> &str;
     fn check(&self) -> &ImageSourceCheck;
     fn set_check(&mut self, check: ImageSourceCheck);
-    async fn check_source(&self) -> anyhow::Result<ImageSourceCheck>;
+    async fn check_source(&self) -> ImageSourceCheck;
 }
 
 #[derive(Debug, Clone)]
@@ -110,7 +110,7 @@ impl ImageSourceTrait for ImageSource {
         }
     }
 
-    async fn check_source(&self) -> anyhow::Result<ImageSourceCheck> {
+    async fn check_source(&self) -> ImageSourceCheck {
         match self {
             ImageSource::Folder(value) => value.check_source().await,
         }

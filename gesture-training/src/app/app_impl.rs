@@ -49,7 +49,7 @@ impl AppCallback {
                     callback: &AppCallback,
                 ) -> anyhow::Result<()> {
                     let modifications = {
-                        let check = image_source.check_source().await?;
+                        let check = image_source.check_source().await;
                         let mut backend = callback.backend.try_borrow_mut()?;
                         let image_source = backend
                             .get_image_source_mut(image_source.id())

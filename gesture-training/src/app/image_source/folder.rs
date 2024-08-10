@@ -1,11 +1,13 @@
-use std::path::PathBuf;
+use std::io;
+use std::path::{Path, PathBuf};
 
+use async_std::prelude::StreamExt;
 use slint::SharedString;
 use uuid::Uuid;
 
 use crate::sg;
 
-use super::{ImageSource, ImageSourceCheck, ImageSourceTrait};
+use super::{ImageSource, ImageSourceCheck, ImageSourceStatus, ImageSourceTrait};
 
 #[derive(Debug, Clone)]
 pub struct ImageSourceFolder {
@@ -17,12 +19,54 @@ pub struct ImageSourceFolder {
 
 impl ImageSourceFolder {
     pub fn new(id: Uuid, name: String, path: PathBuf, check: ImageSourceCheck) -> Self {
-        Self { 
-            id, 
-            name, 
+        Self {
+            id,
+            name,
             path,
-            check
+            check,
         }
+    }
+
+    const IMAGE_EXTENSIONS: &'static [&'static str] = &["jpg", "jpeg", "png", "bmp"];
+    fn is_image_file(path: &async_std::path::Path) -> bool {
+        if let Some(extension) = path.extension().and_then(|ext| ext.to_str()) {
+            Self::IMAGE_EXTENSIONS.contains(&extension)
+        } else {
+            false
+        }
+    }
+    async fn find_image_files_in_directory(path: &Path) -> io::Result<Vec<PathBuf>> {
+        let mut paths = vec![path.to_path_buf()];
+        let mut image_paths = Vec::new();
+        while let Some(current_path) = paths.pop() {
+            match async_std::fs::read_dir(current_path).await {
+                Ok(mut read_dir) => loop {
+                    match read_dir.next().await {
+                        Some(Ok(entry)) => {
+                            if Self::is_image_file(&entry.path()) {
+                                image_paths.push(entry.path().into())
+                            } else if let Ok(entry_type) = entry.file_type().await {
+                                if entry_type.is_dir() {
+                                    paths.push(entry.path().into())
+                                }
+                            }
+                        }
+                        Some(Err(error)) => {
+                            eprintln!("{}", error);
+                            break;
+                        }
+                        None => {
+                            break;
+                        }
+                    }
+                },
+                Err(error) => {
+                    eprintln!("{}", error);
+                    return Err(error);
+                }
+            }
+        }
+        Ok(image_paths)
     }
 }
 
@@ -42,8 +86,17 @@ impl ImageSourceTrait for ImageSourceFolder {
         self.check = check;
     }
 
-    async fn check_source(&self) -> anyhow::Result<ImageSourceCheck> {
-        todo!()
+    async fn check_source(&self) -> ImageSourceCheck {
+        Self::find_image_files_in_directory(&self.path)
+            .await
+            .map(|paths| ImageSourceCheck {
+                image_count: paths.len(),
+                status: ImageSourceStatus::Valid,
+            })
+            .unwrap_or_else(|error| ImageSourceCheck {
+                image_count: 0,
+                status: ImageSourceStatus::Error(error.to_string()),
+            })
     }
 }
 
@@ -77,7 +130,7 @@ impl From<ImageSourceFolder> for sg::EditSourceFolderData {
     }
 }
 
-impl TryFrom<super::ImageSource> for sg::EditSourceFolderData {
+impl TryFrom<ImageSource> for sg::EditSourceFolderData {
     type Error = anyhow::Error;
     fn try_from(value: ImageSource) -> Result<Self, Self::Error> {
         let ImageSource::Folder(folder) = value;
