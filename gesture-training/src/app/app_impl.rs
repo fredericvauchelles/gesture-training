@@ -37,8 +37,14 @@ impl AppCallback {
                 .backend
                 .try_borrow_mut()
                 .map_err(anyhow::Error::from)
-                .and_then(|mut backend| {
-                    backend.add_or_update_image_source_from_edit_folder(&data)
+                .and_then(|backend| {
+                    this.app
+                        .source_folder
+                        .edited_path()
+                        .map(|path| (backend, path))
+                })
+                .and_then(|(mut backend, path)| {
+                    backend.add_or_update_image_source_from_edit_folder(&data, path)
                 })?;
 
             if let Some(mut ui) = this.ui.upgrade() {
@@ -132,8 +138,11 @@ impl App {
                 .on_request_asked_path(move || {
                     let id = callback.app.source_folder().next_request_ask_path_id() as i32;
                     let ui = callback.ui.clone();
+                    let app_clone = callback.app.clone();
                     let future = async move {
                         if let Some(selection) = AsyncFileDialog::new().pick_folder().await {
+                            app_clone.source_folder().set_edited_path(selection.path());
+
                             // update the ui
                             ui.upgrade()
                                 .unwrap()

@@ -11,7 +11,7 @@ use super::{ImageSource, ImageSourceTrait};
 pub struct ImageSourceFolder {
     id: Uuid,
     pub(crate) name: String,
-    path: PathBuf,
+    pub(crate) path: PathBuf,
 }
 
 impl ImageSourceFolder {
