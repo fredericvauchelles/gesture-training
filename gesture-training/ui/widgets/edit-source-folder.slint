@@ -31,20 +31,21 @@ export component EditSourceFolder inherits VerticalBox {
     callback delete(string);
 
     property<bool> is-add;
-    in-out property<EditSourceFolderData> data;
+    property<EditSourceFolderData> data;
+
+    out property<string> name;
+    out property<string> path;
+    in-out property<int> image-count;
+    in-out property<StatusIconType> status-type;
 
     public function setup-add() {
         is-add = true;
-        data = {
-            name: "Unnamed",
-            path: "path/to/folder",
-            image-count: 0,
-            status: {
-                type: StatusIconType.Unknown
-            },
-        };
 
-        bind-in-data();
+        data.id = "";
+        name = "Unnamed";
+        path = "path/to/folder";
+        image-count = 0;
+        status-type = StatusIconType.Unknown;
     }
 
     public function setup-edit(source-id: string) -> bool {
@@ -52,17 +53,13 @@ export component EditSourceFolder inherits VerticalBox {
         if (data.id == "") {
             return false;
         }
-        
-        bind-in-data();
+        name = data.name;
+        path = data.path;
+        image-count = data.image-count;
+        status-type = data.status.type;
         
         is-add = false;
         return true;
-    }
-
-    function bind-in-data() {
-        text-input-name.text = data.name;
-        text-path.text = data.path;
-        text-image-count.text = data.status.type == StatusIconType.Valid ? data.image-count: "?";
     }
 
     Rectangle {
@@ -93,10 +90,10 @@ export component EditSourceFolder inherits VerticalBox {
                         text: "Name";
                         vertical-alignment: center;
                     }
-                        text-input-name := TextInput {
+                    TextInput {
                         horizontal-alignment: right;
                         vertical-alignment: center;
-                        text: "Default Name";
+                        text <=> name;
                         color: Palette.control-foreground.darker(25%);
 
                         edited => { data.name = self.text; }
@@ -118,10 +115,10 @@ export component EditSourceFolder inherits VerticalBox {
                         text: "Folder Path";
                         vertical-alignment: center;
                     }
-                    text-path := Text {
+                    Text {
                         horizontal-alignment: right;
                         vertical-alignment: center;
-                        text: "Default Path";
+                        text: path;
                         color: Palette.control-foreground.darker(25%);
                     }
                     Button {
@@ -151,7 +148,7 @@ export component EditSourceFolder inherits VerticalBox {
                     text-image-count := Text {
                         horizontal-alignment: right;
                         vertical-alignment: center;
-                        text: "?";
+                        text: status-type == StatusIconType.Valid ? image-count : "?";
                         color: Palette.control-foreground.darker(25%);
                     }
                     Rectangle {
@@ -205,6 +202,7 @@ export component EditSourceFolder inherits VerticalBox {
                         border-bottom-right-radius: 0;
 
                         clicked => { 
+                            update-data-from-fields();
                             EditSourceFolderNative.add-or-save-folder-source(data);
                             on-add-or-save();
                         }
@@ -222,5 +220,10 @@ export component EditSourceFolder inherits VerticalBox {
                 }
             }
         }
+    }
+
+    function update-data-from-fields() {
+        data.name = name;
+        data.path = path;
     }
 }

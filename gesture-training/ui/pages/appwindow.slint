@@ -30,7 +30,6 @@ export component AppWindow inherits Window {
     in-out property<AppFlow> app-flow: AppFlow.PrepareSession;
     in property<[ImageSourceSelectorEntryData]> image-source-selector-datas <=> prepare-session.image-source-selector-datas;
     in property<PreparedSessionData> prepared-session-data <=> prepare-session.prepared-session-data;
-    in-out property<EditSourceFolderData> edited-source-folder-data <=> edit-source-folder.data;
 
     title: "Gesture Training";
     Rectangle {
