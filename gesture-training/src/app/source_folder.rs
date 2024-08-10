@@ -24,6 +24,11 @@ impl AppSourceFolder {
         Ok(())
     }
 
+    pub fn clear_edited_path(&self) -> anyhow::Result<()> {
+        *(self.currently_edited_path.try_borrow_mut()?) = None;
+        Ok(())
+    }
+
     pub fn edited_path(&self) -> anyhow::Result<Option<PathBuf>> {
         self.currently_edited_path.try_borrow().map(|path| path.clone()).map_err(anyhow::Error::from)
     }

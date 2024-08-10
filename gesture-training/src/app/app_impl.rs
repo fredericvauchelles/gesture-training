@@ -257,6 +257,17 @@ impl App {
         {
             let callback = app_callback.clone();
             ui.ui()
+                .global::<sg::EditSourceFolderNative>()
+                .on_clear_source_folder_editor(move || {
+                    callback
+                        .app
+                        .handle_error(callback.app.source_folder.clear_edited_path());
+                });
+        }
+
+        {
+            let callback = app_callback.clone();
+            ui.ui()
                 .global::<sg::ImageSourceNative>()
                 .on_delete_source_id(move |id| callback.on_delete_source_id(id));
         }

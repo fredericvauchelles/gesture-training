@@ -19,6 +19,8 @@ export global EditSourceFolderNative {
 
     callback request-asked-path() -> int;
 
+    callback clear-source-folder-editor();
+
     // Test implementations
     get-folder-source-data-from-id(string) => { {
         path: "my path",
@@ -47,6 +49,7 @@ export component EditSourceFolder inherits VerticalBox {
 
     public function setup-add() {
         is-add = true;
+        EditSourceFolderNative.clear-source-folder-editor();
 
         data.id = "";
         name = "Unnamed";
@@ -58,6 +61,7 @@ export component EditSourceFolder inherits VerticalBox {
         if (data.id == "") {
             return false;
         }
+        EditSourceFolderNative.clear-source-folder-editor();
         name = data.name;
         path = data.path;
         
