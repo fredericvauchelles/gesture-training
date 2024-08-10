@@ -96,7 +96,9 @@ impl AppCallback {
                         .map(|path| (backend, path))
                 })
                 .and_then(|(mut backend, path)| {
-                    backend.image_sources_mut().add_or_update_image_source_from_edit_folder(&data, path)
+                    backend
+                        .image_sources_mut()
+                        .add_or_update_image_source_from_edit_folder(&data, path)
                 })?;
 
             // propagate change to the ui
@@ -109,9 +111,7 @@ impl AppCallback {
             let changed_ids = diff
                 .image_sources()
                 .iter()
-                .filter(|source| {
-                    !matches!(source, ImageSourceModification::Deleted(_))
-                })
+                .filter(|source| !matches!(source, ImageSourceModification::Deleted(_)))
                 .map(|source| source.id());
             this.trigger_image_source_check(changed_ids);
 
@@ -186,6 +186,31 @@ impl AppCallback {
 
         self.app.handle_error(execute(self, id));
     }
+
+    fn on_set_image_source_used(&self, id: SharedString, is_used: bool) {
+        fn execute(callback: &AppCallback, id: SharedString, is_used: bool) -> anyhow::Result<()> {
+            let uuid = Uuid::from_str(&id)?;
+
+            let modification = {
+                let mut backend = callback.backend.try_borrow_mut()?;
+                if is_used {
+                    backend.add_image_source_to_session(uuid)
+                } else {
+                    backend.remove_image_source_from_session(uuid)
+                }
+            };
+
+            if !modification.is_empty() {
+                let mut ui = callback.ui.upgrade().ok_or(anyhow::anyhow!(""))?;
+                let backend = callback.backend.try_borrow()?;
+                ui.update_with_backend_modifications(&backend, &modification);
+            }
+
+            Ok(())
+        }
+
+        self.app.handle_error(execute(self, id, is_used));
+    }
 }
 
 impl App {
@@ -234,6 +259,15 @@ impl App {
             ui.ui()
                 .global::<sg::ImageSourceNative>()
                 .on_delete_source_id(move |id| callback.on_delete_source_id(id));
+        }
+
+        {
+            let callback = app_callback.clone();
+            ui.ui()
+                .global::<sg::ImageSourceSelectorNative>()
+                .on_set_image_source_used(move |id, is_used| {
+                    callback.on_set_image_source_used(id, is_used)
+                });
         }
 
         Ok(())

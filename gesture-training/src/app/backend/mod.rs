@@ -1,7 +1,7 @@
 use uuid::Uuid;
 
 pub use image_sources::ImageSourceBackend;
-pub use modifications::{AppBackendModifications, ImageSourceModification};
+pub use modifications::{AppBackendModifications, ImageSourceModification, SessionModification};
 
 use crate::app::backend::session::SessionBackend;
 use crate::sg;
@@ -30,12 +30,30 @@ impl AppBackend {
     pub fn image_sources_mut(&mut self) -> &mut ImageSourceBackend {
         &mut self.image_sources
     }
-    
+
     pub fn session(&self) -> &SessionBackend {
         &self.session
     }
     pub fn session_mut(&mut self) -> &mut SessionBackend {
         &mut self.session
+    }
+
+    pub fn add_image_source_to_session(&mut self, uuid: Uuid) -> AppBackendModifications {
+        if self.image_sources.get_image_source(uuid).is_some()
+            && self.session.add_image_source(uuid)
+        {
+            SessionModification::AddedImageSource(uuid).into()
+        } else {
+            AppBackendModifications::default()
+        }
+    }
+
+    pub fn remove_image_source_from_session(&mut self, uuid: Uuid) -> AppBackendModifications {
+        if self.session.remove_image_source(uuid) {
+            SessionModification::RemovedImageSource(uuid).into()
+        } else {
+            AppBackendModifications::default()
+        }
     }
 
     pub fn new_image_source_selector_entry_data(

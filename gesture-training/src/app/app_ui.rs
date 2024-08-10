@@ -2,7 +2,7 @@ use std::rc::{Rc, Weak};
 
 use slint::{ComponentHandle, Model, VecModel};
 
-use crate::app::backend::{AppBackend, AppBackendModifications, ImageSourceModification};
+use crate::app::backend::{AppBackend, AppBackendModifications, ImageSourceModification, SessionModification};
 use crate::sg;
 
 #[derive(Clone)]
@@ -78,47 +78,92 @@ impl AppUi {
         backend: &AppBackend,
         modifications: &AppBackendModifications,
     ) {
-        for image_source_diff in modifications.image_sources() {
-            match image_source_diff {
-                ImageSourceModification::Added(uuid) => {
-                    let image_source_selector_entry = backend
-                        .new_image_source_selector_entry_data(*uuid)
-                        .expect("");
+        // image source selector entry update
+        {
+            let edits = modifications
+                .image_sources()
+                .iter()
+                .filter_map(|modif| {
+                    if let ImageSourceModification::Modified(uuid) = modif {
+                        Some(uuid)
+                    } else {
+                        None
+                    }
+                })
+                .chain(
+                    modifications
+                        .session()
+                        .iter()
+                        .filter_map(|modif| {
+                            match modif {
+                                SessionModification::AddedImageSource(uuid) => Some(uuid),
+                                SessionModification::RemovedImageSource(uuid) => Some(uuid),
+                            }
+                        }),
+                );
+
+            for uuid in edits {
+                let uuid_str = uuid.to_string();
+                if let Some(position) = self
+                    .backend
+                    .image_source_selector_entries
+                    .iter()
+                    .position(|item| &item.id == &uuid_str)
+                {
+                    let image_source = backend.image_sources().get_image_source(*uuid).expect("");
+
+                    let mut model = self
+                        .backend
+                        .image_source_selector_entries
+                        .row_data(position)
+                        .unwrap();
+                    image_source.update_image_source_selector_entry(&mut model);
                     self.backend
                         .image_source_selector_entries
-                        .push(image_source_selector_entry)
+                        .set_row_data(position, model);
                 }
-                ImageSourceModification::Modified(uuid) => {
-                    let uuid_str = uuid.to_string();
-                    if let Some(position) = self
-                        .backend
-                        .image_source_selector_entries
-                        .iter()
-                        .position(|item| &item.id == &uuid_str)
-                    {
-                        let image_source = backend.image_sources().get_image_source(*uuid).expect("");
+            }
+        }
 
-                        let mut model = self
-                            .backend
-                            .image_source_selector_entries
-                            .row_data(position)
-                            .unwrap();
-                        image_source.update_image_source_selector_entry(&mut model);
-                        self.backend
-                            .image_source_selector_entries
-                            .set_row_data(position, model);
-                    }
+        // image source selector entry add
+        {
+            let adds = modifications.image_sources().iter().filter_map(|modif| {
+                if let ImageSourceModification::Added(uuid) = modif {
+                    Some(uuid)
+                } else {
+                    None
                 }
-                ImageSourceModification::Deleted(uuid) => {
-                    let uuid_str = uuid.to_string();
-                    if let Some(position) = self
-                        .backend
-                        .image_source_selector_entries
-                        .iter()
-                        .position(|entry| &entry.id == &uuid_str)
-                    {
-                        self.backend.image_source_selector_entries.remove(position);
-                    }
+            });
+
+            for uuid in adds {
+                let image_source_selector_entry = backend
+                    .new_image_source_selector_entry_data(*uuid)
+                    .expect("");
+                self.backend
+                    .image_source_selector_entries
+                    .push(image_source_selector_entry)
+            }
+        }
+
+        // image source selector entry deletes
+        {
+            let deletes = modifications.image_sources().iter().filter_map(|modif| {
+                if let ImageSourceModification::Deleted(uuid) = modif {
+                    Some(uuid)
+                } else {
+                    None
+                }
+            });
+
+            for uuid in deletes {
+                let uuid_str = uuid.to_string();
+                if let Some(position) = self
+                    .backend
+                    .image_source_selector_entries
+                    .iter()
+                    .position(|entry| &entry.id == &uuid_str)
+                {
+                    self.backend.image_source_selector_entries.remove(position);
                 }
             }
         }
