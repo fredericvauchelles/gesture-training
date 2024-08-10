@@ -31,6 +31,12 @@ export component AppWindow inherits Window {
     in property<[ImageSourceSelectorEntryData]> image-source-selector-datas <=> prepare-session.image-source-selector-datas;
     in property<PreparedSessionData> prepared-session-data <=> prepare-session.prepared-session-data;
 
+    /** Native */
+    public function edit-source-folder-request-asked-path-completed(id: int, new-path: string) {
+        edit-source-folder.request-asked-path-completed(id, new-path);
+    }
+    /** End Native */
+
     title: "Gesture Training";
     Rectangle {
         background: Palette.alternate-background;

@@ -129,22 +129,26 @@ impl App {
             let callback = app_callback.clone();
             ui.ui()
                 .global::<sg::EditSourceFolderNative>()
-                .on_open_folder_dialog_for_source_folder(move || {
+                .on_request_asked_path(move || {
+                    let id = callback.app.next_edit_source_folder_request_ask_path_id() as i32;
                     let ui = callback.ui.clone();
                     let future = async move {
                         if let Some(selection) = AsyncFileDialog::new().pick_folder().await {
                             // update the ui
-                            ui
-                                .upgrade()
+                            ui.upgrade()
                                 .unwrap()
                                 .ui()
-                                .global::<sg::EditSourceFolderNative>()
-                                .set_open_folder_dialog_for_source_folder_result(
+                                .invoke_edit_source_folder_request_asked_path_completed(
+                                    id,
                                     selection.path().to_string_lossy().to_string().into(),
                                 );
                         }
                     };
-                    callback.app.handle_error(slint::spawn_local(future).map_err(anyhow::Error::from));
+                    callback
+                        .app
+                        .handle_error(slint::spawn_local(future).map_err(anyhow::Error::from));
+
+                    id
                 });
         }
 

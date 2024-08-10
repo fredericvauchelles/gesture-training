@@ -16,9 +16,8 @@ export global EditSourceFolderNative {
     callback get-folder-source-data-from-id(string) -> EditSourceFolderData;
     callback is-folder-source-data-from-id-valid(string) -> bool;
     callback add-or-save-folder-source(EditSourceFolderData);
-    callback open-folder-dialog-for-source-folder();
 
-    in property<string> open-folder-dialog-for-source-folder-result;
+    callback request-asked-path() -> int;
 
     // Test implementations
     get-folder-source-data-from-id(string) => { {
@@ -37,9 +36,16 @@ export component EditSourceFolder inherits VerticalBox {
     property<EditSourceFolderData> data;
 
     out property<string> name;
-    out property<string> path <=> EditSourceFolderNative.open-folder-dialog-for-source-folder-result;
+    out property<string> path;
     in-out property<int> image-count;
     in-out property<StatusIconType> status-type;
+
+    out property<int> request-asked-path-id;
+    public function request-asked-path-completed(id: int, new-path: string) {
+        if (id == request-asked-path-id) {
+            path = new-path;
+        }
+    }
 
     public function setup-add() {
         is-add = true;
@@ -131,7 +137,7 @@ export component EditSourceFolder inherits VerticalBox {
                         padding: 0;
 
                         clicked => {
-                            EditSourceFolderNative.open-folder-dialog-for-source-folder();
+                            request-asked-path-id = EditSourceFolderNative.request-asked-path();
                         }
                     }
                 }
