@@ -54,7 +54,7 @@ export component AppWindow inherits Window {
                 enabled: false;
                 start-session => { action-start-session(); }
                 open-add-image-source(type) => { action-open-add-image-source(type); }
-                open-image-source-editor(id) => { action-edit-source-folder(id); }
+                open-image-source-editor(id) => { action-edit-image-source(id); }
             } 
         }
     }
@@ -154,7 +154,7 @@ export component AppWindow inherits Window {
         }
     }
 
-    function action-edit-source-folder(source-id: string) {
+    function action-edit-image-source(source-id: string) {
         if (edit-source-folder.setup-edit(source-id)) {
             app-flow = AppFlow.EditSource_Folder;
         }
