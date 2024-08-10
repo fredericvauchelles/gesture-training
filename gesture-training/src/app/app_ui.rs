@@ -96,7 +96,7 @@ impl AppUi {
                         .iter()
                         .position(|item| &item.id == &uuid_str)
                     {
-                        let image_source = backend.get_image_source(*uuid).expect("");
+                        let image_source = backend.image_sources().get_image_source(*uuid).expect("");
 
                         let mut model = self
                             .backend

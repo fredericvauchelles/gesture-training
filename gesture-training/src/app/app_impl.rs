@@ -38,6 +38,7 @@ impl AppCallback {
         ) -> anyhow::Result<()> {
             let backend = callback.backend.try_borrow()?;
             let image_source = backend
+                .image_sources()
                 .get_image_source(uuid)
                 .ok_or(anyhow::anyhow!(""))?
                 .clone();
@@ -52,6 +53,7 @@ impl AppCallback {
                         let check = image_source.check_source().await;
                         let mut backend = callback.backend.try_borrow_mut()?;
                         let image_source = backend
+                            .image_sources_mut()
                             .get_image_source_mut(image_source.id())
                             .ok_or(anyhow::anyhow!(""))?;
                         image_source.set_check(check);
@@ -94,7 +96,7 @@ impl AppCallback {
                         .map(|path| (backend, path))
                 })
                 .and_then(|(mut backend, path)| {
-                    backend.add_or_update_image_source_from_edit_folder(&data, path)
+                    backend.image_sources_mut().add_or_update_image_source_from_edit_folder(&data, path)
                 })?;
 
             // propagate change to the ui
@@ -108,11 +110,7 @@ impl AppCallback {
                 .image_sources()
                 .iter()
                 .filter(|source| {
-                    if let ImageSourceModification::Deleted(_) = source {
-                        false
-                    } else {
-                        true
-                    }
+                    !matches!(source, ImageSourceModification::Deleted(_))
                 })
                 .map(|source| source.id());
             this.trigger_image_source_check(changed_ids);
@@ -135,6 +133,7 @@ impl AppCallback {
                     })
                     .and_then(|(backend, uuid)| {
                         backend
+                            .image_sources()
                             .get_image_source(uuid)
                             .cloned()
                             .ok_or(anyhow::anyhow!(""))
@@ -176,7 +175,7 @@ impl AppCallback {
             let mut backend = this.backend.try_borrow_mut()?;
             let uuid = Uuid::from_str(&id)?;
 
-            if let Some(image_source) = backend.remove_image_source(uuid) {
+            if let Some(image_source) = backend.image_sources_mut().remove_image_source(uuid) {
                 let diff = ImageSourceModification::Deleted(image_source.id()).into();
                 let mut ui = this.ui.upgrade().ok_or(anyhow::anyhow!(""))?;
                 ui.update_with_backend_modifications(&backend, &diff);
