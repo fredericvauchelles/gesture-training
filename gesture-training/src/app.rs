@@ -1,8 +1,9 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use slint::ComponentHandle;
+use slint::{ComponentHandle, VecModel};
 
+use crate::app::app_backend::{AppBackend, ImageSourceDiff};
 use crate::sg;
 
 mod image_source {
@@ -127,25 +128,28 @@ mod image_source {
 
 mod app_backend {
     use std::collections::HashMap;
-    use std::rc::Rc;
+    use std::str::FromStr;
 
-    use slint::VecModel;
     use uuid::Uuid;
 
+    use crate::app::image_source::folder::ImageSourceFolder;
     use crate::sg;
 
     use super::image_source::{ImageSource, ImageSourceTrait};
 
+    pub enum ImageSourceDiff {
+        Added(Uuid),
+        Modified(Uuid),
+    }
+
     pub struct AppBackend {
         image_sources: HashMap<Uuid, ImageSource>,
-        image_source_selector_datas: Rc<VecModel<sg::ImageSourceSelectorEntryData>>,
     }
 
     impl AppBackend {
         pub fn new() -> Self {
             Self {
                 image_sources: HashMap::new(),
-                image_source_selector_datas: Rc::new(VecModel::default()),
             }
         }
 
@@ -162,10 +166,123 @@ mod app_backend {
             self.image_sources.insert(*image_source.id(), image_source);
         }
 
-        pub fn image_source_selector_datas(
-            &self,
-        ) -> &Rc<VecModel<sg::ImageSourceSelectorEntryData>> {
-            &self.image_source_selector_datas
+        pub fn add_or_update_image_source_from_edit_folder(
+            &mut self,
+            data: &sg::EditSourceFolderData,
+        ) -> Result<Option<ImageSourceDiff>, anyhow::Error> {
+            let mut data = data.clone();
+            let id = Uuid::from_str(&data.id).unwrap_or_else(|_| Uuid::new_v4());
+            data.id = id.to_string().into();
+
+            // Update backend
+            Ok(match self.get_image_source_mut(&id) {
+                // Update image source
+                Some(ImageSource::Folder(folder)) => {
+                    folder.name = data.name.to_string();
+                    Some(ImageSourceDiff::Modified(id))
+                }
+                None => {
+                    let image_source = ImageSource::Folder(ImageSourceFolder::new(
+                        id,
+                        data.name.to_string(),
+                        data.path.to_string().into(),
+                    ));
+                    self.add_image_source(image_source.clone());
+                    Some(ImageSourceDiff::Added(*image_source.id()))
+                }
+            })
+        }
+
+        pub fn remove_image_source(&mut self, uuid: &Uuid) {
+            unimplemented!()
+        }
+    }
+}
+
+#[derive(Clone)]
+struct AppUiBackend {
+    image_source_selector_entries: Rc<VecModel<sg::ImageSourceSelectorEntryData>>,
+}
+
+impl AppUiBackend {
+    fn new() -> Self {
+        Self {
+            image_source_selector_entries: Rc::new(VecModel::default()),
+        }
+    }
+}
+
+#[derive(Clone)]
+struct AppUiWeak {
+    ui: slint::Weak<sg::AppWindow>,
+    ui_backend: Rc<AppUiBackend>,
+}
+
+impl AppUiWeak {
+    fn upgrade(&self) -> Option<AppUi> {
+        self.ui.upgrade().map(|ui| AppUi {
+            ui,
+            ui_backend: self.ui_backend.clone(),
+        })
+    }
+}
+
+pub struct AppUi {
+    ui: sg::AppWindow,
+    ui_backend: Rc<AppUiBackend>,
+}
+
+impl AppUi {
+    fn as_weak(&self) -> AppUiWeak {
+        AppUiWeak {
+            ui: self.ui.as_weak(),
+            ui_backend: self.ui_backend.clone(),
+        }
+    }
+
+    pub fn new() -> Result<Self, slint::PlatformError> {
+        Ok(Self {
+            ui: sg::AppWindow::new()?,
+            ui_backend: Rc::new(AppUiBackend::new()),
+        })
+    }
+
+    fn run(&self) -> Result<(), slint::PlatformError> {
+        self.ui.run()
+    }
+
+    fn update_from_diff(&mut self, backend: &AppBackend, image_source_diffs: &[ImageSourceDiff]) {
+        for image_source_diff in image_source_diffs {
+            match image_source_diff {
+                ImageSourceDiff::Added(uuid) => {
+                    let image_source = backend.get_image_source(uuid).expect("");
+                    let image_source_selector_entry = image_source.into();
+                    self.ui_backend
+                        .image_source_selector_entries
+                        .push(image_source_selector_entry)
+                }
+                ImageSourceDiff::Modified(uuid) => {
+                    let uuid_str = uuid.to_string();
+                    if let Some(position) = self
+                        .ui_backend
+                        .image_source_selector_entries
+                        .iter()
+                        .position(|item| &item.id == &uuid_str)
+                    {
+                        let image_source = backend.get_image_source(uuid).expect("");
+
+                        let mut model = self
+                            .ui_backend
+                            .image_source_selector_entries
+                            .row_data(position)
+                            .unwrap();
+                        image_source.update_image_source_selector_entry(&mut model);
+                        self.ui_backend
+                            .image_source_selector_entries
+                            .set_row_data(position, model);
+                    }
+                }
+            }
         }
     }
 }
@@ -174,10 +291,10 @@ pub struct App {}
 
 impl App {
     pub fn run() -> Result<(), slint::PlatformError> {
-        let ui = sg::AppWindow::new()?;
-        let backend = Rc::new(RefCell::new(app_backend::AppBackend::new()));
-        Self::bind(&ui, &backend);
-        ui.run()
+        let app_ui = AppUi::new()?;
+        let app_backend = Rc::new(RefCell::new(app_backend::AppBackend::new()));
+        Self::bind(&app_ui, &app_backend)?;
+        app_ui.run()
     }
 }
 
@@ -186,31 +303,27 @@ mod app_impl {
     use std::rc::Rc;
     use std::str::FromStr;
 
-    use slint::{ComponentHandle, Model};
+    use slint::ComponentHandle;
     use uuid::Uuid;
 
-    use crate::app::App;
-    use crate::app::image_source::{ImageSource, ImageSourceTrait};
+    use crate::app::{App, AppUi, AppUiWeak};
+    use crate::app::app_backend::ImageSourceDiff;
+    use crate::app::image_source::ImageSource;
     use crate::sg;
 
-    use super::image_source::folder::ImageSourceFolder;
-
-    type RcBackend = Rc<RefCell<super::app_backend::AppBackend>>;
     type Backend = super::app_backend::AppBackend;
-
-    enum ImageSourceDiff {
-        Added(Uuid),
-        Modified(Uuid),
-        None,
-    }
+    type RcBackend = Rc<RefCell<super::app_backend::AppBackend>>;
 
     impl App {
-        pub(super) fn bind(ui: &sg::AppWindow, backend: &RcBackend) {
+        pub(super) fn bind(
+            app_ui: &AppUi,
+            backend: &RcBackend,
+        ) -> Result<(), slint::PlatformError> {
             {
-                ui.set_image_source_selector_datas(
-                    backend
-                        .borrow()
-                        .image_source_selector_datas()
+                app_ui.ui.set_image_source_selector_datas(
+                    app_ui
+                        .ui_backend
+                        .image_source_selector_entries
                         .clone()
                         .into(),
                 );
@@ -218,15 +331,12 @@ mod app_impl {
 
             {
                 let backend = backend.clone();
-                ui.global::<sg::EditSourceFolderNative>()
+                let app_ui2 = app_ui.as_weak();
+                app_ui
+                    .ui
+                    .global::<sg::EditSourceFolderNative>()
                     .on_add_or_save_folder_source(move |data| {
-                        if let Err(error) = backend
-                            .try_borrow_mut()
-                            .map_err(anyhow::Error::from)
-                            .map(|mut backend| {
-                                App::add_or_update_image_source_from_edit(&mut backend, &data);
-                            })
-                        {
+                        if let Err(error) = App::add_or_save_folder_source(backend, data, app_ui2) {
                             eprintln!("{}", error);
                         }
                     });
@@ -234,7 +344,9 @@ mod app_impl {
 
             {
                 let backend = backend.clone();
-                ui.global::<sg::EditSourceFolderNative>()
+                app_ui
+                    .ui
+                    .global::<sg::EditSourceFolderNative>()
                     .on_get_folder_source_data_from_id(move |id| -> sg::EditSourceFolderData {
                         match Uuid::from_str(&id)
                             .map_err(anyhow::Error::from)
@@ -258,72 +370,61 @@ mod app_impl {
                         }
                     });
             }
-        }
 
-        fn update_dataview_from_diff(
-            backend: &mut Backend,
-            image_source_diffs: &[ImageSourceDiff],
-        ) {
-            for image_source_diff in image_source_diffs {
-                match image_source_diff {
-                    ImageSourceDiff::Added(uuid) => {
-                        let image_source = backend.get_image_source(uuid).expect("");
-                        let image_source_selector_entry = image_source.into();
-                        backend
-                            .image_source_selector_datas()
-                            .push(image_source_selector_entry)
-                    }
-                    ImageSourceDiff::Modified(uuid) => {
-                        let uuid_str = uuid.to_string();
-                        if let Some(position) = backend
-                            .image_source_selector_datas()
-                            .iter()
-                            .position(|item| &item.id == &uuid_str)
+            {
+                let backend = backend.clone();
+                app_ui
+                    .ui
+                    .global::<sg::ImageSourceNative>()
+                    .on_delete_source_id(move |id| {
+                        if let Err(error) = Uuid::from_str(&id)
+                            .map_err(anyhow::Error::from)
+                            .and_then(|uuid| {
+                                backend
+                                    .try_borrow_mut()
+                                    .map(|backend| (backend, uuid))
+                                    .map_err(anyhow::Error::from)
+                            })
+                            .and_then(|(mut backend, uuid)| {
+                                App::remove_image_source(&mut backend, &uuid)
+                            })
                         {
-                            let image_source = backend.get_image_source(uuid).expect("");
-
-                            let mut model = backend
-                                .image_source_selector_datas()
-                                .row_data(position)
-                                .unwrap();
-                            image_source.update_image_source_selector_entry(&mut model);
-                            backend
-                                .image_source_selector_datas()
-                                .set_row_data(position, model);
+                            eprintln!("{}", error);
                         }
-                    }
-                    ImageSourceDiff::None => {}
-                }
+                    });
             }
+
+            Ok(())
         }
 
-        fn add_or_update_image_source_from_edit(
-            backend: &mut Backend,
-            data: &sg::EditSourceFolderData,
-        ) {
-            let mut data = data.clone();
-            let id = Uuid::from_str(&data.id).unwrap_or_else(|_| Uuid::new_v4());
-            data.id = id.to_string().into();
-
+        fn add_or_save_folder_source(
+            backend: RcBackend,
+            data: sg::EditSourceFolderData,
+            app_ui: AppUiWeak,
+        ) -> anyhow::Result<()> {
             // Update backend
-            let diff = match backend.get_image_source_mut(&id) {
-                // Update image source
-                Some(ImageSource::Folder(folder)) => {
-                    folder.name = data.name.to_string();
-                    ImageSourceDiff::Modified(id)
-                }
-                None => {
-                    let image_source = ImageSource::Folder(ImageSourceFolder::new(
-                        id,
-                        data.name.to_string(),
-                        data.path.to_string().into(),
-                    ));
-                    backend.add_image_source(image_source.clone());
-                    ImageSourceDiff::Added(*image_source.id())
-                }
-            };
+            let diff = backend
+                .try_borrow_mut()
+                .map_err(anyhow::Error::from)
+                .and_then(|mut backend| {
+                    backend.add_or_update_image_source_from_edit_folder(&data)
+                })?;
 
-            Self::update_dataview_from_diff(backend, &[diff]);
+            if let Some((app_ui, diff)) =
+                diff.and_then(|diff| app_ui.upgrade().map(|app_ui| (app_ui, diff)))
+            {
+                let backend = backend.try_borrow()?;
+                app_ui.update_from_diff(&backend, &[diff]);
+            }
+
+            Ok(())
+        }
+
+        fn remove_image_source(
+            backend: &mut Backend,
+            uuid: &Uuid,
+        ) -> Result<ImageSourceDiff, anyhow::Error> {
+            unimplemented!()
         }
     }
 }
