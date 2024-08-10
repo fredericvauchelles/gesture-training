@@ -114,6 +114,15 @@ mod image_source {
             }
         }
     }
+
+    impl ImageSource {
+        pub(crate) fn update_image_source_selector_entry(
+            &self,
+            target: &mut sg::ImageSourceSelectorEntryData,
+        ) {
+            target.name = self.name().to_string().into();
+        }
+    }
 }
 
 mod app_backend {
@@ -277,7 +286,7 @@ mod app_impl {
                                 .image_source_selector_datas()
                                 .row_data(position)
                                 .unwrap();
-                            model.name = image_source.name().into();
+                            image_source.update_image_source_selector_entry(&mut model);
                             backend
                                 .image_source_selector_datas()
                                 .set_row_data(position, model);
