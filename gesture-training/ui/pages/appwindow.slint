@@ -28,10 +28,10 @@ export global ImageSourceNative {
 
 export component AppWindow inherits Window {
     in-out property<AppFlow> app-flow: AppFlow.PrepareSession;
-    in property<[ImageSourceSelectorEntryData]> image-source-selector-datas;
+    in property<[ImageSourceSelectorEntryData]> image-source-selector-datas <=> prepare-session.image-source-selector-datas;
     in property<PreparedSessionData> prepared-session-data <=> prepare-session.prepared-session-data;
     in-out property<EditSourceFolderData> edited-source-folder-data <=> edit-source-folder.data;
-    
+
     title: "Gesture Training";
     Rectangle {
         background: Palette.alternate-background;
@@ -46,8 +46,6 @@ export component AppWindow inherits Window {
             height: prepare-session.preferred-height;
 
             prepare-session := PrepareSession {
-                image-source-selector-datas <=> root.image-source-selector-datas;
-
                 opacity: 0;
                 animate opacity {
                     duration: 200ms;

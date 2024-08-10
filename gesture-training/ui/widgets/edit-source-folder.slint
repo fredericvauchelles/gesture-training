@@ -91,6 +91,8 @@ export component EditSourceFolder inherits VerticalBox {
                         vertical-alignment: center;
                         text: data.name;
                         color: Palette.control-foreground.darker(25%);
+
+                        edited => { data.name = self.text; }
                     }
                     Rectangle {
                         width: CustomPalette.preferred-icon-size;

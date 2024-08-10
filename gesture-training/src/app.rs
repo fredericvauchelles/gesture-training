@@ -136,7 +136,8 @@ mod app_backend {
     }
 }
 
-pub struct App {}
+pub struct App {
+}
 
 impl App {
     pub fn run() -> Result<(), slint::PlatformError> {
@@ -158,7 +159,6 @@ mod app_impl {
     use crate::app::App;
     use crate::app::image_source::{ImageSource, ImageSourceTrait};
     use crate::sg;
-    use crate::sg::AppWindow;
 
     type ArcBackend = Arc<RefCell<super::app_backend::AppBackend>>;
     type Backend = super::app_backend::AppBackend;
@@ -189,10 +189,7 @@ mod app_impl {
                             .try_borrow_mut()
                             .map_err(anyhow::Error::from)
                             .map(|mut backend| {
-                                App::add_or_update_image_source_from_edit(
-                                    &mut backend,
-                                    &data,
-                                );
+                                App::add_or_update_image_source_from_edit(&mut backend, &data);
                             })
                         {
                             eprintln!("{}", error);
