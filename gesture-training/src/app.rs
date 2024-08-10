@@ -177,7 +177,7 @@ mod app_impl {
     use std::rc::Rc;
     use std::str::FromStr;
 
-    use slint::ComponentHandle;
+    use slint::{ComponentHandle, Model};
     use uuid::Uuid;
 
     use crate::app::App;
@@ -237,7 +237,8 @@ mod app_impl {
                             })
                             .and_then(|(backend, uuid)| {
                                 backend
-                                    .get_image_source(&uuid).cloned()
+                                    .get_image_source(&uuid)
+                                    .cloned()
                                     .ok_or(anyhow::anyhow!(""))
                             }) {
                             Ok(ImageSource::Folder(value)) => value.into(),
@@ -263,7 +264,25 @@ mod app_impl {
                             .image_source_selector_datas()
                             .push(image_source_selector_entry)
                     }
-                    ImageSourceDiff::Modified(_uuid) => {}
+                    ImageSourceDiff::Modified(uuid) => {
+                        let uuid_str = uuid.to_string();
+                        if let Some(position) = backend
+                            .image_source_selector_datas()
+                            .iter()
+                            .position(|item| &item.id == &uuid_str)
+                        {
+                            let image_source = backend.get_image_source(uuid).expect("");
+
+                            let mut model = backend
+                                .image_source_selector_datas()
+                                .row_data(position)
+                                .unwrap();
+                            model.name = image_source.name().into();
+                            backend
+                                .image_source_selector_datas()
+                                .set_row_data(position, model);
+                        }
+                    }
                     ImageSourceDiff::None => {}
                 }
             }
