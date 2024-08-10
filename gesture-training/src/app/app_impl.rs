@@ -8,6 +8,8 @@ use uuid::Uuid;
 
 use crate::app::{App, AppUi};
 use crate::app::app_ui::WeakAppUi;
+use crate::app::backend::ImageSourceModification;
+use crate::app::image_source::ImageSourceTrait;
 use crate::sg;
 
 type RcBackend = Rc<RefCell<super::backend::AppBackend>>;
@@ -67,7 +69,24 @@ impl AppCallback {
                     }),
             )
             .and_then(|v| v.try_into().ok())
-            .unwrap_or_else(sg::EditSourceFolderData::default)
+            .unwrap_or_default()
+    }
+
+    pub(crate) fn on_delete_source_id(&self, id: SharedString) {
+        fn execute(this: &AppCallback, id: SharedString) -> anyhow::Result<()> {
+            let mut backend = this.backend.try_borrow_mut()?;
+            let uuid = Uuid::from_str(&id)?;
+
+            if let Some(image_source) = backend.remove_image_source(&uuid) {
+                let diff = ImageSourceModification::Deleted(image_source.id().clone()).into();
+                let mut ui = this.ui.upgrade().ok_or(anyhow::anyhow!(""))?;
+                ui.update_with_backend_modifications(&mut backend, &diff);
+            }
+
+            Ok(())
+        }
+
+        self.app.handle_error(execute(self, id));
     }
 }
 
@@ -105,27 +124,12 @@ impl App {
                 });
         }
 
-        // {
-        //     let backend = backend.clone();
-        //     ui.ui
-        //         .global::<sg::ImageSourceNative>()
-        //         .on_delete_source_id(move |id| {
-        //             if let Err(error) = Uuid::from_str(&id)
-        //                 .map_err(anyhow::Error::from)
-        //                 .and_then(|uuid| {
-        //                     backend
-        //                         .try_borrow_mut()
-        //                         .map(|backend| (backend, uuid))
-        //                         .map_err(anyhow::Error::from)
-        //                 })
-        //                 .and_then(|(mut backend, uuid)| {
-        //                     App::remove_image_source(&mut backend, &uuid)
-        //                 })
-        //             {
-        //                 eprintln!("{}", error);
-        //             }
-        //         });
-        // }
+        {
+            let callback = app_callback.clone();
+            ui.ui()
+                .global::<sg::ImageSourceNative>()
+                .on_delete_source_id(move |id| callback.on_delete_source_id(id));
+        }
 
         Ok(())
     }

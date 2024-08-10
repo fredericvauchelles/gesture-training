@@ -108,6 +108,17 @@ impl AppUi {
                             .set_row_data(position, model);
                     }
                 }
+                ImageSourceModification::Deleted(uuid) => {
+                    let uuid_str = uuid.to_string();
+                    if let Some(position) = self
+                        .backend
+                        .image_source_selector_entries
+                        .iter()
+                        .position(|entry| &entry.id == &uuid_str)
+                    {
+                        self.backend.image_source_selector_entries.remove(position);
+                    }
+                }
             }
         }
     }

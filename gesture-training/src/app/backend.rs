@@ -12,6 +12,7 @@ use super::image_source::{ImageSource, ImageSourceTrait};
 pub enum ImageSourceModification {
     Added(Uuid),
     Modified(Uuid),
+    Deleted(Uuid),
 }
 
 #[derive(Debug)]
@@ -57,6 +58,10 @@ impl AppBackend {
         self.image_sources.insert(*image_source.id(), image_source);
     }
 
+    pub fn remove_image_source(&mut self, uuid: &Uuid) -> Option<ImageSource> {
+        self.image_sources.remove(uuid)
+    }
+
     pub fn add_or_update_image_source_from_edit_folder(
         &mut self,
         data: &sg::EditSourceFolderData,
@@ -82,9 +87,5 @@ impl AppBackend {
                 ImageSourceModification::Added(*image_source.id()).into()
             }
         })
-    }
-
-    pub fn remove_image_source(&mut self, _uuid: &Uuid) {
-        unimplemented!()
     }
 }
