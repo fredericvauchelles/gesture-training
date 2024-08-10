@@ -5,27 +5,45 @@ use uuid::Uuid;
 
 use crate::sg;
 
-use super::{ImageSource, ImageSourceTrait};
+use super::{ImageSource, ImageSourceCheck, ImageSourceTrait};
 
 #[derive(Debug, Clone)]
 pub struct ImageSourceFolder {
     id: Uuid,
     pub(crate) name: String,
     pub(crate) path: PathBuf,
+    check: ImageSourceCheck,
 }
 
 impl ImageSourceFolder {
-    pub fn new(id: Uuid, name: String, path: PathBuf) -> Self {
-        Self { id, name, path }
+    pub fn new(id: Uuid, name: String, path: PathBuf, check: ImageSourceCheck) -> Self {
+        Self { 
+            id, 
+            name, 
+            path,
+            check
+        }
     }
 }
 
 impl ImageSourceTrait for ImageSourceFolder {
-    fn id(&self) -> &Uuid {
-        &self.id
+    fn id(&self) -> Uuid {
+        self.id
     }
     fn name(&self) -> &str {
         &self.name
+    }
+
+    fn check(&self) -> &ImageSourceCheck {
+        &self.check
+    }
+
+    fn set_check(&mut self, check: ImageSourceCheck) {
+        self.check = check;
+    }
+
+    async fn check_source(&self) -> anyhow::Result<ImageSourceCheck> {
+        todo!()
     }
 }
 

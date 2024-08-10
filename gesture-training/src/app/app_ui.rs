@@ -81,8 +81,9 @@ impl AppUi {
         for image_source_diff in modifications.image_sources() {
             match image_source_diff {
                 ImageSourceModification::Added(uuid) => {
-                    let image_source = backend.get_image_source(uuid).expect("");
-                    let image_source_selector_entry = image_source.into();
+                    let image_source_selector_entry = backend
+                        .new_image_source_selector_entry_data(*uuid)
+                        .expect("");
                     self.backend
                         .image_source_selector_entries
                         .push(image_source_selector_entry)
@@ -95,7 +96,7 @@ impl AppUi {
                         .iter()
                         .position(|item| &item.id == &uuid_str)
                     {
-                        let image_source = backend.get_image_source(uuid).expect("");
+                        let image_source = backend.get_image_source(*uuid).expect("");
 
                         let mut model = self
                             .backend

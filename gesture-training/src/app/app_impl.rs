@@ -1,6 +1,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::str::FromStr;
+
 use rfd::AsyncFileDialog;
 pub use slint::ComponentHandle;
 use slint::SharedString;
@@ -9,7 +10,7 @@ use uuid::Uuid;
 use crate::app::{App, AppUi};
 use crate::app::app_ui::WeakAppUi;
 use crate::app::backend::ImageSourceModification;
-use crate::app::image_source::ImageSourceTrait;
+use crate::app::image_source::{ImageSource, ImageSourceTrait};
 use crate::sg;
 
 type RcBackend = Rc<RefCell<super::backend::AppBackend>>;
@@ -30,8 +31,58 @@ impl AppCallback {
         }
     }
 
+    fn trigger_image_source_check(&self, image_source_ids: impl IntoIterator<Item = Uuid>) {
+        fn trigger_image_source_check_for_uuid(
+            callback: &AppCallback,
+            uuid: Uuid,
+        ) -> anyhow::Result<()> {
+            let backend = callback.backend.try_borrow()?;
+            let image_source = backend
+                .get_image_source(uuid)
+                .ok_or(anyhow::anyhow!(""))?
+                .clone();
+
+            let callback_clone = callback.clone();
+            slint::spawn_local(async move {
+                async fn execute(
+                    image_source: ImageSource,
+                    callback: &AppCallback,
+                ) -> anyhow::Result<()> {
+                    let modifications = {
+                        let check = image_source.check_source().await?;
+                        let mut backend = callback.backend.try_borrow_mut()?;
+                        let image_source = backend
+                            .get_image_source_mut(image_source.id())
+                            .ok_or(anyhow::anyhow!(""))?;
+                        image_source.set_check(check);
+                        ImageSourceModification::Modified(image_source.id()).into()
+                    };
+
+                    {
+                        let mut ui = callback.ui.upgrade().ok_or(anyhow::anyhow!(""))?;
+                        let backend = callback.backend.try_borrow()?;
+                        ui.update_with_backend_modifications(&backend, &modifications);
+                    }
+
+                    Ok(())
+                }
+
+                callback_clone
+                    .app
+                    .handle_error(execute(image_source, &callback_clone).await);
+            })?;
+            Ok(())
+        }
+
+        for uuid in image_source_ids.into_iter() {
+            self.app
+                .handle_error(trigger_image_source_check_for_uuid(self, uuid));
+        }
+    }
+
     fn add_or_save_folder_source(&self, data: sg::EditSourceFolderData) {
         fn execute(this: &AppCallback, data: sg::EditSourceFolderData) -> anyhow::Result<()> {
+            // Save in backend
             let diff = this
                 .backend
                 .try_borrow_mut()
@@ -46,10 +97,25 @@ impl AppCallback {
                     backend.add_or_update_image_source_from_edit_folder(&data, path)
                 })?;
 
+            // propagate change to the ui
             if let Some(mut ui) = this.ui.upgrade() {
                 let backend = this.backend.try_borrow().map_err(anyhow::Error::from)?;
                 ui.update_with_backend_modifications(&backend, &diff);
             }
+
+            // Trigger a check of the image source
+            let changed_ids = diff
+                .image_sources()
+                .iter()
+                .filter(|source| {
+                    if let ImageSourceModification::Deleted(_) = source {
+                        false
+                    } else {
+                        true
+                    }
+                })
+                .map(|source| source.id());
+            this.trigger_image_source_check(changed_ids);
 
             Ok(())
         }
@@ -69,7 +135,7 @@ impl AppCallback {
                     })
                     .and_then(|(backend, uuid)| {
                         backend
-                            .get_image_source(&uuid)
+                            .get_image_source(uuid)
                             .cloned()
                             .ok_or(anyhow::anyhow!(""))
                     }),
@@ -77,7 +143,7 @@ impl AppCallback {
             .and_then(|v| v.try_into().ok())
             .unwrap_or_default()
     }
-    
+
     fn on_request_asked_path(&self) -> i32 {
         let id = self.app.source_folder().next_request_ask_path_id() as i32;
         let ui = self.ui.clone();
@@ -99,8 +165,7 @@ impl AppCallback {
                 }
             }
         };
-        self
-            .app
+        self.app
             .handle_error(slint::spawn_local(future).map_err(anyhow::Error::from));
 
         id
@@ -111,8 +176,8 @@ impl AppCallback {
             let mut backend = this.backend.try_borrow_mut()?;
             let uuid = Uuid::from_str(&id)?;
 
-            if let Some(image_source) = backend.remove_image_source(&uuid) {
-                let diff = ImageSourceModification::Deleted(*image_source.id()).into();
+            if let Some(image_source) = backend.remove_image_source(uuid) {
+                let diff = ImageSourceModification::Deleted(image_source.id()).into();
                 let mut ui = this.ui.upgrade().ok_or(anyhow::anyhow!(""))?;
                 ui.update_with_backend_modifications(&backend, &diff);
             }
