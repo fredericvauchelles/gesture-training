@@ -2,6 +2,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::str::FromStr;
 
+use rfd::AsyncFileDialog;
 pub use slint::ComponentHandle;
 use slint::SharedString;
 use uuid::Uuid;
@@ -121,6 +122,29 @@ impl App {
                 .global::<sg::EditSourceFolderNative>()
                 .on_get_folder_source_data_from_id(move |id| -> sg::EditSourceFolderData {
                     callback.get_folder_source_data_from_id(id)
+                });
+        }
+
+        {
+            let callback = app_callback.clone();
+            ui.ui()
+                .global::<sg::EditSourceFolderNative>()
+                .on_open_folder_dialog_for_source_folder(move || {
+                    let ui = callback.ui.clone();
+                    let future = async move {
+                        if let Some(selection) = AsyncFileDialog::new().pick_folder().await {
+                            // update the ui
+                            ui
+                                .upgrade()
+                                .unwrap()
+                                .ui()
+                                .global::<sg::EditSourceFolderNative>()
+                                .set_open_folder_dialog_for_source_folder_result(
+                                    selection.path().to_string_lossy().to_string().into(),
+                                );
+                        }
+                    };
+                    callback.app.handle_error(slint::spawn_local(future).map_err(anyhow::Error::from));
                 });
         }
 

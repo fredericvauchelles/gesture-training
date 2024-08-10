@@ -18,10 +18,13 @@ export global EditSourceFolderNative {
     callback add-or-save-folder-source(EditSourceFolderData);
     callback open-folder-dialog-for-source-folder();
 
+    in property<string> open-folder-dialog-for-source-folder-result;
+
     // Test implementations
     get-folder-source-data-from-id(string) => { {
+        path: "my path",
         id: "000",
-        name: "Tesrtt",
+        name: "Test",
     } }
 }
 
@@ -34,7 +37,7 @@ export component EditSourceFolder inherits VerticalBox {
     property<EditSourceFolderData> data;
 
     out property<string> name;
-    out property<string> path;
+    out property<string> path <=> EditSourceFolderNative.open-folder-dialog-for-source-folder-result;
     in-out property<int> image-count;
     in-out property<StatusIconType> status-type;
 

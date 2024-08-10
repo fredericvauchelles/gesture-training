@@ -6,7 +6,7 @@ use crate::app::backend::{AppBackend, AppBackendModifications, ImageSourceModifi
 use crate::sg;
 
 #[derive(Clone)]
-struct AppUiBackend {
+pub(crate) struct AppUiBackend {
     image_source_selector_entries: Rc<VecModel<sg::ImageSourceSelectorEntryData>>,
 }
 
