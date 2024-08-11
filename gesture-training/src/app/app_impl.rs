@@ -1,7 +1,6 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::str::FromStr;
-use std::time::Duration;
 
 use rfd::AsyncFileDialog;
 pub use slint::ComponentHandle;
@@ -301,7 +300,6 @@ impl App {
         }
 
         {
-            let callback = app_callback.clone();
             ui.ui().global::<sg::TimerNative>().on_seconds_to_string(
                 |seconds: i32| -> SharedString {
                     let min = seconds / 60;
@@ -322,14 +320,14 @@ impl App {
                         ui.ui()
                             .set_session_time_left(prepared_session_data.image_duration as f32);
 
-                        let callback_clone = callback.clone();
-                        callback.app.session.start_timer(
-                            Duration::from_secs(prepared_session_data.image_duration as u64),
-                            move |time_left| {
-                                let ui = callback_clone.ui.upgrade().unwrap();
-                                ui.ui().set_session_time_left(time_left.as_secs_f32())
-                            },
-                        )?;
+                        // let callback_clone = callback.clone();
+                        // callback.app.session.start_timer(
+                        //     Duration::from_secs(prepared_session_data.image_duration as u64),
+                        //     move |time_left| {
+                        //         let ui = callback_clone.ui.upgrade().unwrap();
+                        //         ui.ui().set_session_time_left(time_left.as_secs_f32())
+                        //     },
+                        // )?;
 
                         Ok(())
                     }
