@@ -30,6 +30,8 @@ export global EditSourceFolderNative {
 }
 
 export component EditSourceFolder inherits VerticalBox {
+    in property<bool> enabled: true;
+
     callback on-add-or-save;
     callback cancel;
     callback delete(string);
@@ -98,6 +100,8 @@ export component EditSourceFolder inherits VerticalBox {
                         vertical-alignment: center;
                     }
                     TextInput {
+                        enabled <=> root.enabled;
+
                         horizontal-alignment: right;
                         vertical-alignment: center;
                         text <=> name;
@@ -129,6 +133,8 @@ export component EditSourceFolder inherits VerticalBox {
                         color: Palette.control-foreground.darker(25%);
                     }
                     Button {
+                        enabled <=> root.enabled;
+
                         icon: Icons.edit;
                         width: CustomPalette.preferred-icon-size;
                         height: CustomPalette.preferred-icon-size;
@@ -156,6 +162,8 @@ export component EditSourceFolder inherits VerticalBox {
                         vertical-alignment: center;
                     }
                     Button {
+                        enabled <=> root.enabled;
+
                         width: CustomPalette.preferred-field-height * 3;
                         icon: Icons.minus-circle;
                         padding: 0;
@@ -177,6 +185,8 @@ export component EditSourceFolder inherits VerticalBox {
                     spacing: 0;
 
                     Button {
+                        enabled <=> root.enabled;
+
                         height: CustomPalette.preferred-field-height;
                         icon: Icons.plus-circle;
                         text: is-add ? "Add" : "Save";
@@ -191,6 +201,8 @@ export component EditSourceFolder inherits VerticalBox {
                         }
                     }
                     Button {
+                        enabled <=> root.enabled;
+
                         icon: Icons.minus-circle;
                         text: "Cancel";
                         content-color: Palette.foreground;

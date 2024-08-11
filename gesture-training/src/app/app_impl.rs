@@ -299,6 +299,34 @@ impl App {
                 });
         }
 
+        {
+            let callback = app_callback.clone();
+            ui.ui()
+                .global::<sg::TimerNative>()
+                .on_seconds_to_string(|seconds: i32| -> SharedString {
+                    let min = seconds / 60;
+                    let sec = seconds % 60;
+                    format!("{:02}:{:02}", min, sec).into()
+                });
+        }
+
+        {
+            let callback = app_callback.clone();
+            ui.ui()
+                .global::<sg::SessionNative>()
+                .on_on_session_start(move || {
+                    fn execute(callback: &AppCallback) -> anyhow::Result<()> {
+                        let ui = callback.ui.upgrade().ok_or(anyhow::anyhow!(""))?;
+                        let prepared_session_data = ui.ui().get_prepared_session_data();
+                        ui.ui()
+                            .set_session_time_left(prepared_session_data.image_duration);
+
+                        Ok(())
+                    }
+                    callback.app.handle_error(execute(&callback));
+                });
+        }
+
         Ok(())
     }
 }

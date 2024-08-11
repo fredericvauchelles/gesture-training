@@ -7,7 +7,7 @@ import { PrepareSession } from "prepare-session.slint";
 
 // export data structs
 export {
-    StatusIconData, StatusIconType, EditSourceFolderNative, ImageSourceSelectorNative
+    StatusIconData, StatusIconType, EditSourceFolderNative, ImageSourceSelectorNative, TimerNative
 } from "../widgets/widgets.slint";
 import { ImageSourceType, PreparedSessionData } from "common.slint";
 
@@ -30,6 +30,7 @@ export component AppWindow inherits Window {
     in-out property<AppFlow> app-flow: AppFlow.PrepareSession;
     in property<[ImageSourceSelectorEntryData]> image-source-selector-datas <=> prepare-session.image-source-selector-datas;
     in property<PreparedSessionData> prepared-session-data <=> prepare-session.prepared-session-data;
+    in property<int> session-time-left <=> session.time-left;
 
     /** Native */
     public function dispatch-edit-source-folder-request-asked-path-completed(id: int, new-path: string) {
@@ -51,6 +52,7 @@ export component AppWindow inherits Window {
             height: prepare-session.preferred-height;
 
             prepare-session := PrepareSession {
+                visible: false;
                 opacity: 0;
                 animate opacity {
                     duration: 200ms;
@@ -84,6 +86,8 @@ export component AppWindow inherits Window {
             opacity: 0;
 
             edit-source-folder := EditSourceFolder {
+                visible: false;
+                enabled: false;
                 opacity: 0;
                 cancel => { action-prepare-session(); }
                 delete(index) => { action-delete-source(index); }
@@ -93,6 +97,7 @@ export component AppWindow inherits Window {
     }
 
     session := SessionWindow {
+        visible: false;
         opacity: 0;
 
         exit-session => { action-exit-session(); }
@@ -104,6 +109,8 @@ export component AppWindow inherits Window {
 
     states [
         edit-source-folder when app-flow == AppFlow.EditSource_Folder: {
+            edit-source-folder.visible: true;
+            edit-source-folder.enabled: true;
             modal-overlay.opacity: 0.9;
             
             modal-background.opacity: 1;
@@ -135,10 +142,12 @@ export component AppWindow inherits Window {
             }
         }
         prepare-session when app-flow == AppFlow.PrepareSession: {
+            prepare-session.visible: true;
             prepare-session.opacity: 1;
             prepare-session.enabled: true;
         }
         session when app-flow == AppFlow.Session: {
+            session.visible: true;
             session.opacity: 1;
         }
     ]
