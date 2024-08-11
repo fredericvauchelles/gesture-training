@@ -14,6 +14,7 @@ export global SessionNative {
     callback next-image();
     callback previous-image();
     callback on-image-displayed();
+    callback on-play-mode-changed(bool);
 }
 
 export component SessionWindow inherits Rectangle {
@@ -33,6 +34,7 @@ export component SessionWindow inherits Rectangle {
 
     public function show-image(img: image) {
         current-image = img;
+        timer.is-playing = true;
         SessionNative.on-image-displayed();
     }
 
@@ -78,6 +80,9 @@ export component SessionWindow inherits Rectangle {
         }
         go-to-previous-image => {
             SessionNative.previous-image();
+        }
+        play-mode-changed(is-playing) => {
+            SessionNative.on-play-mode-changed(is-playing);
         }
 
         x: (root.width - self.width) * 0.5;

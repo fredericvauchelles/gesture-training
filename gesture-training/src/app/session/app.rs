@@ -58,6 +58,15 @@ impl AppSession {
             image_history_index: 0,
         }
     }
+    
+    pub fn set_is_playing(&self, is_playing: bool) {
+        if is_playing {
+            self.timer_data.borrow_mut().last_tick_date = Instant::now();
+            self.timer_tick.restart()
+        } else {
+            self.timer_tick.stop()
+        }
+    }
 
     pub fn start_session(
         &mut self,

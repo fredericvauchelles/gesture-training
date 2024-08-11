@@ -406,6 +406,15 @@ impl App {
                 });
         }
 
+        {
+            let callback = app_callback.clone();
+            ui.ui()
+                .global::<sg::SessionNative>()
+                .on_on_play_mode_changed(move |is_playing| {
+                    callback.app.borrow().session.set_is_playing(is_playing);
+                });
+        }
+
         Ok(())
     }
 }

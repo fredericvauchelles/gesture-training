@@ -18,6 +18,7 @@ export component Timer inherits Rectangle {
 
     callback go-to-next-image;
     callback go-to-previous-image;
+    callback play-mode-changed(bool);
 
     width: timer-width + 2 * button-width;
     height: 50px;
@@ -42,7 +43,7 @@ export component Timer inherits Rectangle {
             background: Palette.foreground;
 
             animate width {
-                duration: 200ms;
+                duration: 100ms;
             }
         }
     }
@@ -72,7 +73,10 @@ export component Timer inherits Rectangle {
 
             touch := TouchArea {
                 width: timer-width;
-                clicked => { root.is-playing = !root.is-playing; }
+                clicked => { 
+                    root.is-playing = !root.is-playing; 
+                    play-mode-changed(root.is-playing);
+                }
             }
 
             HorizontalBox {
