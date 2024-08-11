@@ -1,12 +1,11 @@
 use std::cell::RefCell;
-use std::path::Path;
 use std::rc::Rc;
 use std::str::FromStr;
 use std::time::Duration;
 
 use rfd::AsyncFileDialog;
-use slint::{Image, SharedString};
 pub use slint::ComponentHandle;
+use slint::SharedString;
 use uuid::Uuid;
 
 use crate::app::{App, AppUi};
@@ -218,6 +217,61 @@ impl AppCallback {
 
         self.handle_error(execute(self, id, is_used));
     }
+
+    fn on_session_start(&self) {
+        fn execute(callback: &AppCallback) -> anyhow::Result<()> {
+            let prepared_session_data = {
+                let ui = callback.ui.upgrade().ok_or(anyhow::anyhow!(""))?;
+                ui.ui().get_prepared_session_data()
+            };
+
+            let image_sources = {
+                let backend_ref = callback.backend.try_borrow()?;
+                backend_ref
+                    .used_image_source()
+                    .into_iter()
+                    .collect::<Vec<_>>()
+            };
+
+            let session_config = AppSessionConfiguration::new(
+                Duration::from_secs(prepared_session_data.image_duration as u64),
+                prepared_session_data.used_image_count as usize,
+                image_sources,
+            );
+
+            {
+                let callback_clone = callback.clone();
+                let callback_clone2 = callback.clone();
+                let callback_clone3 = callback.clone();
+                let mut app_ref = callback.app.try_borrow_mut()?;
+                app_ref.session.start_session(
+                    &session_config,
+                    move |time_left| {
+                        let ui = callback_clone.ui.upgrade().unwrap();
+                        ui.ui().set_session_time_left(time_left.as_secs_f32())
+                    },
+                    move || {
+                        let ui = callback_clone2.ui.upgrade().unwrap();
+                        ui.ui().set_session_state(sg::SessionWindowState::Loading);
+                    },
+                    move |image| {
+                        let ui = callback_clone3.ui.upgrade().unwrap();
+                        ui.ui().set_session_image(image);
+                        ui.ui().set_session_state(sg::SessionWindowState::Running);
+                    },
+                )?;
+            }
+
+            // Update ui with init data
+            let ui = callback.ui.upgrade().ok_or(anyhow::anyhow!(""))?;
+            let prepared_session_data = ui.ui().get_prepared_session_data();
+            ui.ui()
+                .set_session_time_left(prepared_session_data.image_duration as f32);
+
+            Ok(())
+        }
+        self.handle_error(execute(&self));
+    }
 }
 
 impl App {
@@ -323,53 +377,7 @@ impl App {
             let callback = app_callback.clone();
             ui.ui()
                 .global::<sg::SessionNative>()
-                .on_on_session_start(move || {
-                    fn execute(callback: &AppCallback) -> anyhow::Result<()> {
-                        let prepared_session_data = {
-                            let ui = callback.ui.upgrade().ok_or(anyhow::anyhow!(""))?;
-                            ui.ui().get_prepared_session_data()
-                        };
-
-                        let image_sources = {
-                            let backend_ref = callback.backend.try_borrow()?;
-                            backend_ref
-                                .used_image_source()
-                                .into_iter()
-                                .collect::<Vec<_>>()
-                        };
-
-                        let session_config = AppSessionConfiguration::new(
-                            Duration::from_secs(prepared_session_data.image_duration as u64),
-                            prepared_session_data.used_image_count as usize,
-                            image_sources,
-                        );
-
-                        {
-                            let callback_clone = callback.clone();
-                            let callback_clone2 = callback.clone();
-                            let mut app_ref = callback.app.try_borrow_mut()?;
-                            app_ref
-                                .session
-                                .start_session(&session_config, move |time_left| {
-                                    let ui = callback_clone.ui.upgrade().unwrap();
-                                    ui.ui().set_session_time_left(time_left.as_secs_f32())
-                                },
-                                move |image| {
-                                    let ui = callback_clone2.ui.upgrade().unwrap();
-                                    ui.ui().set_session_image(image);
-                                })?;
-                        }
-
-                        // Update ui with init data
-                        let ui = callback.ui.upgrade().ok_or(anyhow::anyhow!(""))?;
-                        let prepared_session_data = ui.ui().get_prepared_session_data();
-                        ui.ui()
-                            .set_session_time_left(prepared_session_data.image_duration as f32);
-
-                        Ok(())
-                    }
-                    callback.handle_error(execute(&callback));
-                });
+                .on_on_session_start(move || callback.on_session_start());
         }
 
         Ok(())

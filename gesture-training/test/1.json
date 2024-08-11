@@ -1,0 +1,14 @@
+{
+  "app-flow": "PrepareSession",
+  "image-source-selector-datas": [],
+  "prepared-session-data": {
+    "available-image-count": 0.0,
+    "image-duration": 0.0,
+    "status": {
+      "error": "",
+      "type": "Valid"
+    },
+    "used-image-count": 0.0
+  },
+  "session-time-left": 0.0
+}

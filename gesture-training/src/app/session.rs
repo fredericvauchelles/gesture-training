@@ -50,6 +50,7 @@ impl AppSession {
         &mut self,
         config: &AppSessionConfiguration,
         on_timer_tick: impl FnMut(Duration) + 'static,
+        mut on_loading_image: impl FnMut() + 'static,
         mut on_image_loaded: impl FnMut(slint::Image) + 'static,
     ) -> anyhow::Result<()> {
         {
@@ -62,6 +63,7 @@ impl AppSession {
             let config = self.config.as_ref().ok_or(anyhow::anyhow!(""))?.clone();
             let image_source = config.image_sources[next.image_source_index].clone();
             let timer = self.timer_tick.clone();
+            on_loading_image();
             slint::spawn_local(async move {
                 if let Ok(image) = image_source.load_image(next.image_index).await {
                     timer.restart();

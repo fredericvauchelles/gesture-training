@@ -2,7 +2,7 @@ import { Button, VerticalBox, StandardListView, HorizontalBox, Palette, StyleMet
 import { RadioBox, ImageSourceSelectorEntryData, 
     EditSourceFolder, EditSourceFolderData, CustomPalette 
 } from "../widgets/widgets.slint";
-import { SessionWindow } from "session.slint";
+import { SessionWindow, SessionWindowState } from "session.slint";
 import { PrepareSession } from "prepare-session.slint";
 
 // export data structs
@@ -31,7 +31,8 @@ export component AppWindow inherits Window {
     in property<[ImageSourceSelectorEntryData]> image-source-selector-datas <=> prepare-session.image-source-selector-datas;
     in property<PreparedSessionData> prepared-session-data <=> prepare-session.prepared-session-data;
     in property<float> session-time-left <=> session.time-left;
-    in-out property<image> session-image <=> session.current-image;
+    in-out property<image> session-image; 
+    in property<SessionWindowState> session-state: SessionWindowState.Completed;
 
     /** Native */
     public function dispatch-edit-source-folder-request-asked-path-completed(id: int, new-path: string) {
@@ -98,6 +99,8 @@ export component AppWindow inherits Window {
     }
 
     session := SessionWindow {
+        current-image <=> root.session-image;
+        state <=> root.session-state;
         visible: false;
         opacity: 0;
 

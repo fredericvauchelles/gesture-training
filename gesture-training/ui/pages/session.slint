@@ -2,9 +2,16 @@ import { VerticalBox, HorizontalBox, Palette, Slider, StyleMetrics } from "std-w
 import { CustomPalette, Icons, Button, Timer } from "../widgets/widgets.slint";
 import { PreparedSessionData } from "common.slint";
 
+export enum SessionWindowState {
+    Running,
+    Loading,
+    Completed,
+}
+
 export component SessionWindow inherits Rectangle {
-    in-out property current-image <=> image.source;
+    in-out property<image> current-image;
     in-out property time-left <=> timer.time-left;
+    in property<SessionWindowState> state: SessionWindowState.Completed;
 
     callback exit-session <=> button_quit.clicked;
 
@@ -20,7 +27,19 @@ export component SessionWindow inherits Rectangle {
         current-image = img;
     }
 
-    image := Image {}
+    if state == SessionWindowState.Running: Image {
+        width: 100%;
+        height: 100%;
+        image-fit: contain;
+        source <=> root.current-image;
+    }
+
+    if state == SessionWindowState.Loading: Image {
+        width: 100%;
+        height: 100%;
+        image-fit: contain;
+        source: @image-url("../images/loading.jpg");
+    }
 
     Button {
         icon: Icons.more-horizontal-square;

@@ -101,7 +101,6 @@ impl ImageSourceTrait for ImageSourceFolder {
 
     async fn load_image(&self, index: usize) -> anyhow::Result<Image> {
         let images = Self::find_image_files_in_directory(&self.path).await?;
-        
         Ok(slint::Image::load_from_path(&images[index])?)
     }
 }
