@@ -30,32 +30,29 @@ impl AppSessionConfiguration {
 
 pub struct AppSession {
     timer_tick: Timer,
-    timer_last_tick_date: Arc<RefCell<Instant>>,
-    time_left: Arc<RefCell<Duration>>,
+    timer_data: Arc<RefCell<TimerData>>,
 
-    config: Arc<RefCell<Option<AppSessionConfiguration>>>,
-    image_history: Arc<RefCell<Vec<ImageCoordinate>>>,
+    config: Option<AppSessionConfiguration>,
+    image_history: Vec<ImageCoordinate>,
 }
 
 impl AppSession {
     pub fn new() -> Self {
         Self {
             timer_tick: Timer::default(),
-            timer_last_tick_date: Arc::new(RefCell::new(Instant::now())),
-            time_left: Arc::new(RefCell::new(Duration::default())),
-            config: Arc::new(RefCell::new(None)),
-            image_history: Arc::new(RefCell::new(Vec::default())),
+            timer_data: Arc::new(RefCell::new(TimerData::default())),
+            config: None,
+            image_history: Vec::default(),
         }
     }
 
     pub fn start_session(
-        &self,
+        &mut self,
         config: &AppSessionConfiguration,
         on_timer_tick: impl FnMut(Duration) + 'static,
     ) -> anyhow::Result<()> {
         {
-            let mut config_ref = self.config.try_borrow_mut()?;
-            *config_ref = Some(config.clone());
+            self.config = Some(config.clone());
         }
 
         self.configure_timer(on_timer_tick)?;
@@ -63,44 +60,38 @@ impl AppSession {
         Ok(())
     }
 
-    fn configure_timer(&self, mut on_tick: impl FnMut(Duration) + 'static) -> anyhow::Result<()> {
-        let config_ref = self.config.try_borrow()?;
-        let config = config_ref.as_ref().ok_or(anyhow::anyhow!(""))?;
-
+    fn configure_timer(&mut self, mut on_tick: impl FnMut(Duration) + 'static) -> anyhow::Result<()> {
+        let config = self.config.as_ref().ok_or(anyhow::anyhow!(""))?;
         {
-            let mut time_left = self.time_left.try_borrow_mut()?;
-            let mut last_tick_date = self.timer_last_tick_date.try_borrow_mut()?;
+            let mut timer_data = self.timer_data.try_borrow_mut()?;
 
-            *last_tick_date = Instant::now();
-            *time_left = config.image_duration;
+            timer_data.last_tick_date = Instant::now();
+            timer_data.time_left = config.image_duration;
         }
 
         if config.image_duration.is_zero() {
             unimplemented!()
         } else {
-            let time_left = self.time_left.clone();
-            let last_tick_date = self.timer_last_tick_date.clone();
+            let timer_data = self.timer_data.clone();
             self.timer_tick
                 .start(TimerMode::Repeated, Duration::from_millis(200), move || {
                     fn execute(
-                        time_left: &Arc<RefCell<Duration>>,
-                        last_tick_date: &Arc<RefCell<Instant>>,
+                        timer_data: &Arc<RefCell<TimerData>>
                     ) -> anyhow::Result<Duration> {
                         // Update time data
                         let time_left = {
-                            let mut time_left_ref = time_left.try_borrow_mut()?;
-                            let mut last_tick_date_ref = last_tick_date.try_borrow_mut()?;
+                            let mut timer_data_ref = timer_data.try_borrow_mut()?;
 
                             let now = Instant::now();
-                            let delta = now - *last_tick_date_ref;
-                            *last_tick_date_ref = now;
-                            *time_left_ref -= delta;
+                            let delta = now - timer_data_ref.last_tick_date;
+                            timer_data_ref.last_tick_date = now;
+                            timer_data_ref.time_left -= delta;
 
-                            *time_left_ref
+                            timer_data_ref.time_left
                         };
                         Ok(time_left)
                     }
-                    let time_left = execute(&time_left, &last_tick_date).unwrap();
+                    let time_left = execute(&timer_data).unwrap();
 
                     on_tick(time_left);
                 });
@@ -108,6 +99,21 @@ impl AppSession {
         }
 
         Ok(())
+    }
+}
+
+#[derive(Debug, Clone)]
+struct TimerData {
+    last_tick_date: Instant,
+    time_left: Duration,
+}
+
+impl Default for TimerData {
+    fn default() -> Self {
+        Self {
+            time_left: Duration::default(),
+            last_tick_date: Instant::now(),
+        }
     }
 }
 

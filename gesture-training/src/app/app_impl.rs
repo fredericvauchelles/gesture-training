@@ -17,17 +17,27 @@ type RcBackend = Rc<RefCell<super::backend::AppBackend>>;
 
 #[derive(Clone)]
 struct AppCallback {
-    app: Rc<App>,
+    app: Rc<RefCell<App>>,
     ui: WeakAppUi,
     backend: RcBackend,
 }
 
 impl AppCallback {
-    fn new(app: &Rc<App>, ui: &WeakAppUi, backend: &RcBackend) -> Self {
+    fn new(app: &Rc<RefCell<App>>, ui: &WeakAppUi, backend: &RcBackend) -> Self {
         Self {
             app: app.clone(),
             ui: ui.clone(),
             backend: backend.clone(),
+        }
+    }
+
+    fn handle_error<V>(&self, result: anyhow::Result<V>) -> Option<V> {
+        match self.app.try_borrow_mut() {
+            Ok(app) => app.handle_error(result),
+            Err(error) => {
+                eprintln!("{}", error);
+                None
+            }
         }
     }
 
@@ -69,46 +79,36 @@ impl AppCallback {
                     Ok(())
                 }
 
-                callback_clone
-                    .app
-                    .handle_error(execute(image_source, &callback_clone).await);
+                callback_clone.handle_error(execute(image_source, &callback_clone).await);
             })?;
             Ok(())
         }
 
         for uuid in image_source_ids.into_iter() {
-            self.app
-                .handle_error(trigger_image_source_check_for_uuid(self, uuid));
+            self.handle_error(trigger_image_source_check_for_uuid(self, uuid));
         }
     }
 
     fn add_or_save_folder_source(&self, data: sg::EditSourceFolderData) {
         fn execute(this: &AppCallback, data: sg::EditSourceFolderData) -> anyhow::Result<()> {
             // Save in backend
-            let diff = this
-                .backend
-                .try_borrow_mut()
-                .map_err(anyhow::Error::from)
-                .and_then(|backend| {
-                    this.app
-                        .source_folder
-                        .edited_path()
-                        .map(|path| (backend, path))
-                })
-                .and_then(|(mut backend, path)| {
-                    backend
-                        .image_sources_mut()
-                        .add_or_update_image_source_from_edit_folder(&data, path)
-                })?;
+            let modifications = {
+                let mut backend = this.backend.try_borrow_mut()?;
+                let app = this.app.try_borrow()?;
+                let path = app.source_folder.edited_path().cloned();
+                backend
+                    .image_sources_mut()
+                    .add_or_update_image_source_from_edit_folder(&data, path)?
+            };
 
             // propagate change to the ui
             if let Some(mut ui) = this.ui.upgrade() {
                 let backend = this.backend.try_borrow().map_err(anyhow::Error::from)?;
-                ui.update_with_backend_modifications(&backend, &diff);
+                ui.update_with_backend_modifications(&backend, &modifications);
             }
 
             // Trigger a check of the image source
-            let changed_ids = diff
+            let changed_ids = modifications
                 .image_sources()
                 .iter()
                 .filter(|source| !matches!(source, ImageSourceModification::Deleted(_)))
@@ -117,42 +117,44 @@ impl AppCallback {
 
             Ok(())
         }
-        self.app.handle_error(execute(self, data));
+        self.handle_error(execute(self, data));
     }
 
     fn get_folder_source_data_from_id(&self, id: SharedString) -> sg::EditSourceFolderData {
-        self.app
-            .handle_error(
-                Uuid::from_str(&id)
-                    .map_err(anyhow::Error::from)
-                    .and_then(|uuid| {
-                        self.backend
-                            .try_borrow()
-                            .map_err(anyhow::Error::from)
-                            .map(|backend| (backend, uuid))
-                    })
-                    .and_then(|(backend, uuid)| {
-                        backend
-                            .image_sources()
-                            .get_image_source(uuid)
-                            .cloned()
-                            .ok_or(anyhow::anyhow!(""))
-                    }),
-            )
-            .and_then(|v| v.try_into().ok())
-            .unwrap_or_default()
+        self.handle_error(
+            Uuid::from_str(&id)
+                .map_err(anyhow::Error::from)
+                .and_then(|uuid| {
+                    self.backend
+                        .try_borrow()
+                        .map_err(anyhow::Error::from)
+                        .map(|backend| (backend, uuid))
+                })
+                .and_then(|(backend, uuid)| {
+                    backend
+                        .image_sources()
+                        .get_image_source(uuid)
+                        .cloned()
+                        .ok_or(anyhow::anyhow!(""))
+                }),
+        )
+        .and_then(|v| v.try_into().ok())
+        .unwrap_or_default()
     }
 
     fn on_request_asked_path(&self) -> i32 {
-        let id = self.app.source_folder().next_request_ask_path_id() as i32;
-        let ui = self.ui.clone();
-        let app_clone = self.app.clone();
-        let future = async move {
-            if let Some(selection) = AsyncFileDialog::new().pick_folder().await {
-                // try to store the selected path
-                if let Err(error) = app_clone.source_folder().set_edited_path(selection.path()) {
-                    app_clone.handle_error::<()>(Err(error));
-                } else {
+        if let Some(app) = self.handle_error(self.app.try_borrow().map_err(anyhow::Error::from)) {
+            let id = app.source_folder().next_request_ask_path_id() as i32;
+            let ui = self.ui.clone();
+            let app_clone = self.app.clone();
+            let future = async move {
+                if let Some(selection) = AsyncFileDialog::new().pick_folder().await {
+                    let mut app_clone_ref = app_clone.try_borrow_mut().unwrap();
+                    // try to store the selected path
+                    app_clone_ref
+                        .source_folder_mut()
+                        .set_edited_path(selection.path());
+
                     // update the ui
                     ui.upgrade()
                         .unwrap()
@@ -162,12 +164,14 @@ impl AppCallback {
                             selection.path().to_string_lossy().to_string().into(),
                         );
                 }
-            }
-        };
-        self.app
-            .handle_error(slint::spawn_local(future).map_err(anyhow::Error::from));
+            };
 
-        id
+            self.handle_error(slint::spawn_local(future).map_err(anyhow::Error::from));
+
+            id
+        } else {
+            -1
+        }
     }
 
     pub(crate) fn on_delete_source_id(&self, id: SharedString) {
@@ -184,7 +188,7 @@ impl AppCallback {
             Ok(())
         }
 
-        self.app.handle_error(execute(self, id));
+        self.handle_error(execute(self, id));
     }
 
     fn on_set_image_source_used(&self, id: SharedString, is_used: bool) {
@@ -209,7 +213,7 @@ impl AppCallback {
             Ok(())
         }
 
-        self.app.handle_error(execute(self, id, is_used));
+        self.handle_error(execute(self, id, is_used));
     }
 }
 
@@ -226,7 +230,7 @@ impl App {
 
     /// Initialize data in backend and app
     pub(super) fn initialize(
-        _app: &Rc<App>,
+        _app: &Rc<RefCell<App>>,
         ui: &AppUi,
         _backend: &RcBackend,
     ) -> Result<(), slint::PlatformError> {
@@ -243,7 +247,7 @@ impl App {
     }
 
     pub(super) fn bind(
-        app: &Rc<App>,
+        app: &Rc<RefCell<App>>,
         ui: &AppUi,
         backend: &RcBackend,
     ) -> Result<(), slint::PlatformError> {
@@ -277,9 +281,11 @@ impl App {
             ui.ui()
                 .global::<sg::EditSourceFolderNative>()
                 .on_clear_source_folder_editor(move || {
-                    callback
-                        .app
-                        .handle_error(callback.app.source_folder.clear_edited_path());
+                    if let Some(mut app_ref) = callback
+                        .handle_error(callback.app.try_borrow_mut().map_err(anyhow::Error::from))
+                    {
+                        app_ref.source_folder.clear_edited_path();
+                    }
                 });
         }
 
@@ -331,7 +337,7 @@ impl App {
 
                         Ok(())
                     }
-                    callback.app.handle_error(execute(&callback));
+                    callback.handle_error(execute(&callback));
                 });
         }
 
