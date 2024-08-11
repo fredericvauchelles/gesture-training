@@ -78,6 +78,15 @@ impl AppSession {
         Ok(())
     }
 
+    pub fn reset_time_left(&self) -> anyhow::Result<()> {
+        let config = self.config.as_ref().ok_or(anyhow::anyhow!(""))?;
+        let mut timer_data_ref = self.timer_data.try_borrow_mut()?;
+        timer_data_ref.time_left = config.image_duration;
+        timer_data_ref.last_tick_date = Instant::now();
+
+        Ok(())
+    }
+
     pub fn go_to_next_image(&mut self) -> anyhow::Result<()> {
         if let Ok(next) = self.session_next_image_coordinates() {
             let config = self.config.as_ref().ok_or(anyhow::anyhow!(""))?.clone();
@@ -102,9 +111,10 @@ impl AppSession {
                     }) {
                     Ok((mut timer_data, image)) => {
                         timer.restart();
-                        timer_data.time_left = config.image_duration;
+                        // timer_data.time_left = config.image_duration;
                         if let Some(callback) = on_image_loaded {
-                            callback(image);
+                            let callback = callback.clone();
+                            Timer::single_shot(Duration::from_millis(1), move || callback(image))
                         }
                     }
                     Err(error) => {

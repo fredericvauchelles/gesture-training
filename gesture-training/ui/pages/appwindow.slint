@@ -29,7 +29,6 @@ export component AppWindow inherits Window {
     in property<[ImageSourceSelectorEntryData]> image-source-selector-datas <=> prepare-session.image-source-selector-datas;
     in property<PreparedSessionData> prepared-session-data <=> prepare-session.prepared-session-data;
     in property<float> session-time-left <=> session.time-left;
-    in-out property<image> session-image; 
     in property<SessionWindowState> session-state: SessionWindowState.Completed;
 
     /** Native */
@@ -97,7 +96,6 @@ export component AppWindow inherits Window {
     }
 
     session := SessionWindow {
-        current-image <=> root.session-image;
         state <=> root.session-state;
         visible: false;
         opacity: 0;
@@ -198,7 +196,7 @@ export component AppWindow inherits Window {
         action-prepare-session();
     }
 
-    function session-show-image(img: image) {
+    public function session-show-image(img: image) {
         session.show-image(img);
     }
 }

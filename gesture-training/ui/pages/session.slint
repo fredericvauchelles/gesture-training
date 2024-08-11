@@ -13,6 +13,7 @@ export global SessionNative {
     callback on-session-stop();
     callback next-image();
     callback previous-image();
+    callback on-image-displayed();
 }
 
 export component SessionWindow inherits Rectangle {
@@ -32,6 +33,7 @@ export component SessionWindow inherits Rectangle {
 
     public function show-image(img: image) {
         current-image = img;
+        SessionNative.on-image-displayed();
     }
 
     if state == SessionWindowState.Running: Image {

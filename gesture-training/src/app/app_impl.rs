@@ -257,7 +257,7 @@ impl AppCallback {
                     },
                     move |image| {
                         let ui = callback_clone3.ui.upgrade().unwrap();
-                        ui.ui().set_session_image(image);
+                        ui.ui().invoke_session_show_image(image);
                         ui.ui().set_session_state(sg::SessionWindowState::Running);
                     },
                 )?;
@@ -393,6 +393,17 @@ impl App {
                             .map_err(anyhow::Error::from)
                             .and_then(|mut app| app.session.go_to_next_image()),
                     );
+                });
+        }
+
+        {
+            let callback = app_callback.clone();
+            ui.ui()
+                .global::<sg::SessionNative>()
+                .on_on_image_displayed(move || {
+                    callback.app.try_borrow().map_err(anyhow::Error::from).and_then(|app| {
+                        app.session.reset_time_left()
+                    }).unwrap();
                 });
         }
 
