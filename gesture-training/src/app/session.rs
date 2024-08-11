@@ -29,7 +29,7 @@ impl AppSessionConfiguration {
 }
 
 pub struct AppSession {
-    timer_tick: Timer,
+    timer_tick: Arc<Timer>,
     timer_data: Arc<RefCell<TimerData>>,
 
     config: Option<AppSessionConfiguration>,
@@ -39,7 +39,7 @@ pub struct AppSession {
 impl AppSession {
     pub fn new() -> Self {
         Self {
-            timer_tick: Timer::default(),
+            timer_tick: Arc::new(Timer::default()),
             timer_data: Arc::new(RefCell::new(TimerData::default())),
             config: None,
             image_history: Vec::default(),
@@ -61,8 +61,10 @@ impl AppSession {
         if let Ok(next) = self.session_next_image_coordinates() {
             let config = self.config.as_ref().ok_or(anyhow::anyhow!(""))?.clone();
             let image_source = config.image_sources[next.image_source_index].clone();
+            let timer = self.timer_tick.clone();
             slint::spawn_local(async move {
                 if let Ok(image) = image_source.load_image(next.image_index).await {
+                    timer.restart();
                     on_image_loaded(image);
                 }
             })?;
