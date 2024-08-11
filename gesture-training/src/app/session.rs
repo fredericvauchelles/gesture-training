@@ -5,7 +5,7 @@ use std::time::{Duration, Instant};
 use rand::Rng;
 use slint::{Timer, TimerMode};
 
-use crate::app::image_source::ImageSource;
+use crate::app::image_source::{ImageSource, ImageSourceTrait};
 
 #[derive(Debug, Clone)]
 pub struct AppSessionConfiguration {
@@ -50,6 +50,7 @@ impl AppSession {
         &mut self,
         config: &AppSessionConfiguration,
         on_timer_tick: impl FnMut(Duration) + 'static,
+        mut on_image_loaded: impl FnMut(slint::Image) + 'static,
     ) -> anyhow::Result<()> {
         {
             self.config = Some(config.clone());
@@ -57,10 +58,47 @@ impl AppSession {
 
         self.configure_timer(on_timer_tick)?;
 
+        if let Ok(next) = self.session_next_image_coordinates() {
+            let config = self.config.as_ref().ok_or(anyhow::anyhow!(""))?.clone();
+            let image_source = config.image_sources[next.image_source_index].clone();
+            slint::spawn_local(async move {
+                if let Ok(image) = image_source.load_image(next.image_index).await {
+                    on_image_loaded(image);
+                }
+            })?;
+        }
+
         Ok(())
     }
 
-    fn configure_timer(&mut self, mut on_tick: impl FnMut(Duration) + 'static) -> anyhow::Result<()> {
+    fn session_next_image_coordinates(&mut self) -> anyhow::Result<ImageCoordinate> {
+        if let Some(image_coordinate) = self.find_next_image_coordinates() {
+            self.image_history.push(image_coordinate);
+            Ok(image_coordinate)
+        } else {
+            Err(anyhow::anyhow!(""))
+        }
+    }
+
+    fn find_next_image_coordinates(&self) -> Option<ImageCoordinate> {
+        if let Some(config) = self.config.as_ref() {
+            let result = ImageCoordinate::rand(&config.image_sources);
+            for _ in 0..10 {
+                let image_coord = ImageCoordinate::rand(&config.image_sources);
+                if !self.image_history.contains(&image_coord) {
+                    break;
+                }
+            }
+            Some(result)
+        } else {
+            None
+        }
+    }
+
+    fn configure_timer(
+        &mut self,
+        mut on_tick: impl FnMut(Duration) + 'static,
+    ) -> anyhow::Result<()> {
         let config = self.config.as_ref().ok_or(anyhow::anyhow!(""))?;
         {
             let mut timer_data = self.timer_data.try_borrow_mut()?;
@@ -75,9 +113,7 @@ impl AppSession {
             let timer_data = self.timer_data.clone();
             self.timer_tick
                 .start(TimerMode::Repeated, Duration::from_millis(200), move || {
-                    fn execute(
-                        timer_data: &Arc<RefCell<TimerData>>
-                    ) -> anyhow::Result<Duration> {
+                    fn execute(timer_data: &Arc<RefCell<TimerData>>) -> anyhow::Result<Duration> {
                         // Update time data
                         let time_left = {
                             let mut timer_data_ref = timer_data.try_borrow_mut()?;
@@ -124,11 +160,14 @@ struct ImageCoordinate {
 }
 
 impl ImageCoordinate {
-    pub fn rand(image_source_count: usize, image_count: usize) -> Self {
+    pub fn rand(image_sources: &[ImageSource]) -> Self {
         let mut rng = rand::thread_rng();
+        let image_source_index = rng.gen::<usize>() % (image_sources.len());
+        let image_index =
+            rng.gen::<usize>() % (image_sources[image_source_index].check().image_count());
         Self {
-            image_source_index: rng.gen::<usize>() % image_source_count,
-            image_index: rng.gen::<usize>() % image_count,
+            image_source_index,
+            image_index,
         }
     }
 }

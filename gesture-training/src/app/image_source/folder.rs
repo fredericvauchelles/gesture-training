@@ -2,7 +2,7 @@ use std::io;
 use std::path::{Path, PathBuf};
 
 use async_std::prelude::StreamExt;
-use slint::SharedString;
+use slint::{Image, SharedString};
 use uuid::Uuid;
 
 use crate::sg;
@@ -97,6 +97,12 @@ impl ImageSourceTrait for ImageSourceFolder {
                 image_count: 0,
                 status: ImageSourceStatus::Error(error.to_string()),
             })
+    }
+
+    async fn load_image(&self, index: usize) -> anyhow::Result<Image> {
+        let images = Self::find_image_files_in_directory(&self.path).await?;
+        
+        Ok(slint::Image::load_from_path(&images[index])?)
     }
 }
 

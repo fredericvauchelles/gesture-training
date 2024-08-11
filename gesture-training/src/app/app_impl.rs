@@ -1,16 +1,19 @@
 use std::cell::RefCell;
+use std::path::Path;
 use std::rc::Rc;
 use std::str::FromStr;
+use std::time::Duration;
 
 use rfd::AsyncFileDialog;
+use slint::{Image, SharedString};
 pub use slint::ComponentHandle;
-use slint::SharedString;
 use uuid::Uuid;
 
 use crate::app::{App, AppUi};
 use crate::app::app_ui::WeakAppUi;
 use crate::app::backend::ImageSourceModification;
 use crate::app::image_source::{ImageSource, ImageSourceTrait};
+use crate::app::session::AppSessionConfiguration;
 use crate::sg;
 
 type RcBackend = Rc<RefCell<super::backend::AppBackend>>;
@@ -237,6 +240,7 @@ impl App {
         ui.ui().set_prepared_session_data(sg::PreparedSessionData {
             available_image_count: 0,
             image_duration: 30,
+            used_image_count: 5,
             status: sg::StatusIconData {
                 r#type: sg::StatusIconType::Unknown,
                 error: SharedString::default(),
@@ -321,19 +325,46 @@ impl App {
                 .global::<sg::SessionNative>()
                 .on_on_session_start(move || {
                     fn execute(callback: &AppCallback) -> anyhow::Result<()> {
+                        let prepared_session_data = {
+                            let ui = callback.ui.upgrade().ok_or(anyhow::anyhow!(""))?;
+                            ui.ui().get_prepared_session_data()
+                        };
+
+                        let image_sources = {
+                            let backend_ref = callback.backend.try_borrow()?;
+                            backend_ref
+                                .used_image_source()
+                                .into_iter()
+                                .collect::<Vec<_>>()
+                        };
+
+                        let session_config = AppSessionConfiguration::new(
+                            Duration::from_secs(prepared_session_data.image_duration as u64),
+                            prepared_session_data.used_image_count as usize,
+                            image_sources,
+                        );
+
+                        {
+                            let callback_clone = callback.clone();
+                            let callback_clone2 = callback.clone();
+                            let mut app_ref = callback.app.try_borrow_mut()?;
+                            app_ref
+                                .session
+                                .start_session(&session_config, move |time_left| {
+                                    let ui = callback_clone.ui.upgrade().unwrap();
+                                    ui.ui().set_session_time_left(time_left.as_secs_f32())
+                                },
+                                move |image| {
+                                    let ui = callback_clone2.ui.upgrade().unwrap();
+                                    ui.ui().set_session_image(image);
+                                })?;
+                        }
+
+                        // Update ui with init data
                         let ui = callback.ui.upgrade().ok_or(anyhow::anyhow!(""))?;
                         let prepared_session_data = ui.ui().get_prepared_session_data();
                         ui.ui()
                             .set_session_time_left(prepared_session_data.image_duration as f32);
-
-                        // let callback_clone = callback.clone();
-                        // callback.app.session.start_timer(
-                        //     Duration::from_secs(prepared_session_data.image_duration as u64),
-                        //     move |time_left| {
-                        //         let ui = callback_clone.ui.upgrade().unwrap();
-                        //         ui.ui().set_session_time_left(time_left.as_secs_f32())
-                        //     },
-                        // )?;
 
                         Ok(())
                     }

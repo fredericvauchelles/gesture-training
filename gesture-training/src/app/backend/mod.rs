@@ -6,7 +6,7 @@ pub use modifications::{AppBackendModifications, ImageSourceModification, Sessio
 use crate::app::backend::session::SessionBackend;
 use crate::sg;
 
-use super::image_source::ImageSourceTrait;
+use super::image_source::{ImageSource, ImageSourceTrait};
 
 mod image_sources;
 mod modifications;
@@ -69,5 +69,9 @@ impl AppBackend {
                 enabled: self.session().is_image_source_used(image_source.id()),
                 status: image_source.check().status().into(),
             })
+    }
+    
+    pub fn used_image_source<'a>(&'a self) -> impl IntoIterator<Item=ImageSource> + 'a {
+        self.session().image_source_used().into_iter().filter_map(|uuid| self.image_sources().get_image_source(*uuid)).cloned()
     }
 }

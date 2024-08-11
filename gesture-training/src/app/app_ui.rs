@@ -219,10 +219,12 @@ impl AppUi {
                         }
                     });
 
+                let prepared_session_data = self.ui.get_prepared_session_data();
                 self.ui.set_prepared_session_data(sg::PreparedSessionData {
                     available_image_count: status.image_count() as i32,
+                    used_image_count: prepared_session_data.used_image_count,
                     status: status.status().into(),
-                    image_duration: 30,
+                    image_duration: prepared_session_data.image_duration,
                 })
             }
         }

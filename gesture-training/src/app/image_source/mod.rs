@@ -1,4 +1,4 @@
-use slint::SharedString;
+use slint::{Image, SharedString};
 use uuid::Uuid;
 
 use folder::ImageSourceFolder;
@@ -33,8 +33,13 @@ impl ImageSourceCheck {
     pub fn status(&self) -> &ImageSourceStatus {
         &self.status
     }
-    
-    pub fn new(image_count: usize, status: ImageSourceStatus) -> Self { Self { image_count, status}}
+
+    pub fn new(image_count: usize, status: ImageSourceStatus) -> Self {
+        Self {
+            image_count,
+            status,
+        }
+    }
 }
 
 impl From<ImageSourceStatus> for sg::StatusIconData {
@@ -80,6 +85,7 @@ pub trait ImageSourceTrait {
     fn check(&self) -> &ImageSourceCheck;
     fn set_check(&mut self, check: ImageSourceCheck);
     async fn check_source(&self) -> ImageSourceCheck;
+    async fn load_image(&self, index: usize) -> anyhow::Result<slint::Image>;
 }
 
 #[derive(Debug, Clone)]
@@ -115,6 +121,12 @@ impl ImageSourceTrait for ImageSource {
     async fn check_source(&self) -> ImageSourceCheck {
         match self {
             ImageSource::Folder(value) => value.check_source().await,
+        }
+    }
+
+    async fn load_image(&self, index: usize) -> anyhow::Result<Image> {
+        match self {
+            ImageSource::Folder(value) => value.load_image(index).await,
         }
     }
 }

@@ -31,6 +31,7 @@ export component AppWindow inherits Window {
     in property<[ImageSourceSelectorEntryData]> image-source-selector-datas <=> prepare-session.image-source-selector-datas;
     in property<PreparedSessionData> prepared-session-data <=> prepare-session.prepared-session-data;
     in property<float> session-time-left <=> session.time-left;
+    in-out property<image> session-image <=> session.current-image;
 
     /** Native */
     public function dispatch-edit-source-folder-request-asked-path-completed(id: int, new-path: string) {
