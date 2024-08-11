@@ -104,7 +104,7 @@ impl AppSession {
                         timer.restart();
                         if let Some(callback) = on_image_loaded {
                             let callback = callback.clone();
-                            Timer::single_shot(Duration::from_millis(1), move || callback(image))
+                            callback(image);
                         }
                     }
                     Err(error) => {
