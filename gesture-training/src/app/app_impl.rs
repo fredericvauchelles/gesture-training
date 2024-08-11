@@ -301,13 +301,13 @@ impl App {
 
         {
             let callback = app_callback.clone();
-            ui.ui()
-                .global::<sg::TimerNative>()
-                .on_seconds_to_string(|seconds: i32| -> SharedString {
+            ui.ui().global::<sg::TimerNative>().on_seconds_to_string(
+                |seconds: i32| -> SharedString {
                     let min = seconds / 60;
                     let sec = seconds % 60;
                     format!("{:02}:{:02}", min, sec).into()
-                });
+                },
+            );
         }
 
         {
@@ -320,6 +320,17 @@ impl App {
                         let prepared_session_data = ui.ui().get_prepared_session_data();
                         ui.ui()
                             .set_session_time_left(prepared_session_data.image_duration);
+
+                        let callback_clone = callback.clone();
+                        callback.app.session.session_timer.start(
+                            slint::TimerMode::Repeated,
+                            std::time::Duration::from_secs(1),
+                            move || {
+                                let ui = callback_clone.ui.upgrade().unwrap();
+                                ui.ui()
+                                    .set_session_time_left(ui.ui().get_session_time_left() - 1);
+                            },
+                        );
 
                         Ok(())
                     }

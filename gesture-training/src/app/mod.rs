@@ -2,22 +2,26 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use crate::app::app_ui::AppUi;
+use crate::app::session::AppSession;
 use crate::app::source_folder::AppSourceFolder;
 
 mod app_impl;
 mod app_ui;
 mod backend;
 mod image_source;
+mod session;
 pub mod source_folder;
 
 pub struct App {
     source_folder: AppSourceFolder,
+    session: AppSession,
 }
 
 impl App {
     pub fn new() -> Self {
         Self {
             source_folder: AppSourceFolder::new(),
+            session: AppSession::new()
         }
     }
 
