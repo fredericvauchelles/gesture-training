@@ -35,7 +35,7 @@ impl AppCallback {
     }
 
     fn handle_error<V>(&self, result: anyhow::Result<V>) -> Option<V> {
-        match self.app.try_borrow_mut() {
+        match self.app.try_borrow() {
             Ok(app) => app.handle_error(result),
             Err(error) => {
                 eprintln!("{}", error);
