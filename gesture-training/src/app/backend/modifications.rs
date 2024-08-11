@@ -1,4 +1,5 @@
 use uuid::Uuid;
+use crate::sg;
 
 #[derive(Debug, Clone, Copy)]
 pub enum ImageSourceModification {
@@ -30,6 +31,7 @@ impl From<ImageSourceModification> for AppBackendModifications {
 pub enum SessionModification {
     AddedImageSource(Uuid),
     RemovedImageSource(Uuid),
+    State(sg::SessionWindowState)
 }
 
 #[derive(Debug, Default)]

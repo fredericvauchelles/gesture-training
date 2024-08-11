@@ -92,10 +92,16 @@ impl AppUi {
                         None
                     }
                 })
-                .chain(modifications.session().iter().map(|modif| match modif {
-                    SessionModification::AddedImageSource(uuid) => uuid,
-                    SessionModification::RemovedImageSource(uuid) => uuid,
-                }));
+                .chain(
+                    modifications
+                        .session()
+                        .iter()
+                        .filter_map(|modif| match modif {
+                            SessionModification::AddedImageSource(uuid) => Some(uuid),
+                            SessionModification::RemovedImageSource(uuid) => Some(uuid),
+                            SessionModification::State(_state) => None,
+                        }),
+                );
 
             for uuid in edits {
                 let uuid_str = uuid.to_string();
@@ -160,6 +166,24 @@ impl AppUi {
                 {
                     self.backend.image_source_selector_entries.remove(position);
                 }
+            }
+        }
+
+        // Session state
+        {
+            if let Some(state) = modifications
+                .session()
+                .iter()
+                .filter_map(|modif| {
+                    if let SessionModification::State(state) = modif {
+                        Some(state)
+                    } else {
+                        None
+                    }
+                })
+                .last()
+            {
+                self.ui.set_session_state(*state);
             }
         }
 

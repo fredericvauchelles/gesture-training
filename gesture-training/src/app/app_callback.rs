@@ -374,12 +374,15 @@ impl App {
             ui.ui()
                 .global::<sg::SessionNative>()
                 .on_next_image(move || {
-                    callback
+                    let modifications = callback
                         .app
                         .borrow_mut()
                         .session
                         .go_to_next_image()
-                        .unwrap()
+                        .unwrap();
+                    
+                    let backend = callback.backend.borrow();
+                    callback.ui.upgrade().unwrap().update_with_backend_modifications(&backend, &modifications);
                 });
         }
 

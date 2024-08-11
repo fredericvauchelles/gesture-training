@@ -52,6 +52,14 @@ export component SessionWindow inherits Rectangle {
         source: @image-url("../images/loading.jpg");
     }
 
+    if state == SessionWindowState.Completed: Image {
+        width: 100%;
+        height: 100%;
+        
+        image-fit: contain;
+        source: @image-url("../images/loading.jpg");
+    }
+
     Button {
         icon: Icons.more-horizontal-square;
         width: 32px;

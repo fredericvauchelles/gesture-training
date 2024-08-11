@@ -4,9 +4,10 @@ use std::time::{Duration, Instant};
 
 use rand::Rng;
 use slint::{Timer, TimerMode};
-
+use crate::app::backend::{AppBackendModifications, SessionModification};
 use crate::app::image_source::{ImageSource, ImageSourceTrait};
 use crate::app::log::Log;
+use crate::sg;
 
 #[derive(Debug, Clone)]
 pub struct AppSessionConfiguration {
@@ -58,7 +59,7 @@ impl AppSession {
             image_history_index: 0,
         }
     }
-    
+
     pub fn set_is_playing(&self, is_playing: bool) {
         if is_playing {
             self.timer_data.borrow_mut().last_tick_date = Instant::now();
@@ -135,27 +136,36 @@ impl AppSession {
         Ok(())
     }
 
-    pub fn go_to_next_image(&mut self) -> anyhow::Result<()> {
-        if let Ok(image_coordinate) = self.session_next_image_coordinates() {
-            self.go_to_image(image_coordinate)?;
+    pub fn go_to_next_image(&mut self) -> anyhow::Result<AppBackendModifications> {
+        match self.session_next_image_coordinates() {
+            Ok(Some(image_coordinate)) => {
+                self.go_to_image(image_coordinate)?;
+                Ok(AppBackendModifications::default())
+            }
+            Ok(None) => {
+                self.timer_tick.stop();
+                Ok(SessionModification::State(sg::SessionWindowState::Completed).into())
+            },
+            Err(error) => Err(error),
         }
-
-        Ok(())
     }
 
-    fn session_next_image_coordinates(&mut self) -> anyhow::Result<ImageCoordinate> {
+    fn session_next_image_coordinates(&mut self) -> anyhow::Result<Option<ImageCoordinate>> {
         if self.image_history_index == 0 {
-            if let Some(image_coordinate) = self.find_next_image_coordinates() {
+            if self.image_history.len() == self.config.as_ref().unwrap().image_count {
+                Ok(None)
+            } else if let Some(image_coordinate) = self.find_next_image_coordinates() {
                 self.image_history.push(image_coordinate);
-                Ok(image_coordinate)
+                Ok(Some(image_coordinate))
             } else {
                 Err(anyhow::anyhow!(""))
             }
+        } else {
+            self.image_history_index = self.image_history_index - 1;
+            Ok(Some(
+                self.image_history[self.image_history.len() - 1 - self.image_history_index],
+            ))
         }
-         else {
-             self.image_history_index = self.image_history_index - 1;
-             Ok(self.image_history[self.image_history.len() - 1 - self.image_history_index])
-         }
     }
 
     fn session_previous_image_coordinates(&mut self) -> Option<ImageCoordinate> {
