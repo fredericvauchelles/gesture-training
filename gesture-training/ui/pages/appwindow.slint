@@ -2,24 +2,22 @@ import { Button, VerticalBox, StandardListView, HorizontalBox, Palette, StyleMet
 import { RadioBox, ImageSourceSelectorEntryData, 
     EditSourceFolder, EditSourceFolderData, CustomPalette 
 } from "../widgets/widgets.slint";
-import { SessionWindow, SessionWindowState } from "session.slint";
+import { SessionWindow, SessionWindowState, SessionNative } from "session.slint";
 import { PrepareSession } from "prepare-session.slint";
 
 // export data structs
 export {
     StatusIconData, StatusIconType, EditSourceFolderNative, ImageSourceSelectorNative, TimerNative
 } from "../widgets/widgets.slint";
+export {
+    SessionNative
+} from "session.slint";
 import { ImageSourceType, PreparedSessionData } from "common.slint";
 
 enum AppFlow {
     PrepareSession,
     Session,
     EditSource_Folder,
-}
-
-export global SessionNative {
-    callback on-session-start();
-    callback on-session-stop();
 }
 
 export global ImageSourceNative {

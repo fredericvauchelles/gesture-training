@@ -256,6 +256,8 @@ impl AppCallback {
                     },
                     move |image| {
                         let ui = callback_clone3.ui.upgrade().unwrap();
+                        // reset the timer here
+                        todo!();
                         ui.ui().set_session_image(image);
                         ui.ui().set_session_state(sg::SessionWindowState::Running);
                     },
@@ -378,6 +380,21 @@ impl App {
             ui.ui()
                 .global::<sg::SessionNative>()
                 .on_on_session_start(move || callback.on_session_start());
+        }
+
+        {
+            let callback = app_callback.clone();
+            ui.ui()
+                .global::<sg::SessionNative>()
+                .on_next_image(move || {
+                    callback.handle_error(
+                        callback
+                            .app
+                            .try_borrow_mut()
+                            .map_err(anyhow::Error::from)
+                            .and_then(|mut app| app.session.go_to_next_image()),
+                    );
+                });
         }
 
         Ok(())

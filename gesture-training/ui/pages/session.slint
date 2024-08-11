@@ -8,6 +8,13 @@ export enum SessionWindowState {
     Completed,
 }
 
+export global SessionNative {
+    callback on-session-start();
+    callback on-session-stop();
+    callback next-image();
+    callback previous-image();
+}
+
 export component SessionWindow inherits Rectangle {
     in-out property<image> current-image;
     in-out property time-left <=> timer.time-left;
@@ -64,6 +71,13 @@ export component SessionWindow inherits Rectangle {
     }
 
     timer := Timer {
+        go-to-next-image => {
+            SessionNative.next-image();
+        }
+        go-to-previous-image => {
+            SessionNative.previous-image();
+        }
+
         x: (root.width - self.width) * 0.5;
         y: root.height - self.height - 50px;
     }

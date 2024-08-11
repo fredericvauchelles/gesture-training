@@ -76,13 +76,14 @@ impl AppSession {
 
         Ok(())
     }
-    
-    fn go_to_next_image(&mut self) -> anyhow::Result<()> {
+
+    pub fn go_to_next_image(&mut self) -> anyhow::Result<()> {
         if let Ok(next) = self.session_next_image_coordinates() {
             let config = self.config.as_ref().ok_or(anyhow::anyhow!(""))?.clone();
             let image_source = config.image_sources[next.image_source_index].clone();
             let timer = self.timer_tick.clone();
 
+            timer.stop();
             if let Some(callback) = self.session_callbacks.on_start_image_load.as_ref() {
                 callback();
             }
@@ -96,7 +97,7 @@ impl AppSession {
                 }
             })?;
         }
-        
+
         Ok(())
     }
 
@@ -160,7 +161,6 @@ impl AppSession {
 
                     on_tick(time_left);
                 });
-            self.timer_tick.stop();
         }
 
         Ok(())
