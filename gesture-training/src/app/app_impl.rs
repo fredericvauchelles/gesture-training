@@ -12,6 +12,7 @@ use crate::app::{App, AppUi};
 use crate::app::app_ui::WeakAppUi;
 use crate::app::backend::ImageSourceModification;
 use crate::app::image_source::{ImageSource, ImageSourceTrait};
+use crate::app::log::Log;
 use crate::app::session::AppSessionConfiguration;
 use crate::sg;
 
@@ -37,7 +38,7 @@ impl AppCallback {
         match self.app.try_borrow() {
             Ok(app) => app.handle_error(result),
             Err(error) => {
-                eprintln!("{}", error);
+                Log::handle_error(&error);
                 None
             }
         }
@@ -256,8 +257,6 @@ impl AppCallback {
                     },
                     move |image| {
                         let ui = callback_clone3.ui.upgrade().unwrap();
-                        // reset the timer here
-                        todo!();
                         ui.ui().set_session_image(image);
                         ui.ui().set_session_state(sg::SessionWindowState::Running);
                     },
@@ -281,7 +280,7 @@ impl App {
         match value {
             Ok(value) => Some(value),
             Err(error) => {
-                eprintln!("{}", error);
+                Log::handle_error(&error);
                 None
             }
         }

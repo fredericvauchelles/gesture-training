@@ -67,7 +67,7 @@ impl AppWorkflow for WorkflowPrepareSession {
                 |workflow| match workflow {
                     Ok(workflow) => Message::RunSession(MessageRunSession::Initialize(workflow)),
                     Err(error) => {
-                        eprintln!("{}", error);
+                        Log::handle_error(error);
                         Message::None
                     }
                 },
@@ -100,7 +100,7 @@ impl AppWorkflow for WorkflowPrepareSession {
                             MessagePrepareSession::SetPreparedSession(prepared_session),
                         ),
                         Err(error) => {
-                            eprintln!("{}", error);
+                            Log::handle_error(error);
                             Message::None
                         }
                     },
@@ -245,7 +245,7 @@ impl WorkflowPrepareSession {
                             }
                         }
                         Err(error) => {
-                            eprintln!("{}", error);
+                            Log::handle_error(error);
                             break;
                         }
                         Ok(None) => {
@@ -254,7 +254,7 @@ impl WorkflowPrepareSession {
                     }
                 },
                 Err(error) => {
-                    eprintln!("{}", error);
+                    Log::handle_error(error);
                     return Err(error);
                 }
             }

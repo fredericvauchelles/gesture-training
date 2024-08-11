@@ -6,6 +6,7 @@ use rand::Rng;
 use slint::{Timer, TimerMode};
 
 use crate::app::image_source::{ImageSource, ImageSourceTrait};
+use crate::app::log::Log;
 
 #[derive(Debug, Clone)]
 pub struct AppSessionConfiguration {
@@ -82,6 +83,7 @@ impl AppSession {
             let config = self.config.as_ref().ok_or(anyhow::anyhow!(""))?.clone();
             let image_source = config.image_sources[next.image_source_index].clone();
             let timer = self.timer_tick.clone();
+            let timer_data = self.timer_data.clone();
 
             timer.stop();
             if let Some(callback) = self.session_callbacks.on_start_image_load.as_ref() {
@@ -89,10 +91,24 @@ impl AppSession {
             }
             let on_image_loaded = self.session_callbacks.on_image_loaded.clone();
             slint::spawn_local(async move {
-                if let Ok(image) = image_source.load_image(next.image_index).await {
-                    timer.restart();
-                    if let Some(callback) = on_image_loaded {
-                        callback(image);
+                match image_source
+                    .load_image(next.image_index)
+                    .await
+                    .and_then(|image| {
+                        timer_data
+                            .try_borrow_mut()
+                            .map_err(anyhow::Error::from)
+                            .map(|timer_data| (timer_data, image))
+                    }) {
+                    Ok((mut timer_data, image)) => {
+                        timer.restart();
+                        timer_data.time_left = config.image_duration;
+                        if let Some(callback) = on_image_loaded {
+                            callback(image);
+                        }
+                    }
+                    Err(error) => {
+                        Log::handle_error(&error);
                     }
                 }
             })?;

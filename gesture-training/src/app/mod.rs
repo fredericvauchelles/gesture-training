@@ -9,6 +9,7 @@ mod app_impl;
 mod app_ui;
 mod backend;
 mod image_source;
+mod log;
 mod session;
 pub mod source_folder;
 

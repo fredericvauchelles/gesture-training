@@ -5,6 +5,7 @@ use async_std::prelude::StreamExt;
 use slint::{Image, SharedString};
 use uuid::Uuid;
 
+use crate::app::log::Log;
 use crate::sg;
 
 use super::{ImageSource, ImageSourceCheck, ImageSourceStatus, ImageSourceTrait};
@@ -52,7 +53,7 @@ impl ImageSourceFolder {
                             }
                         }
                         Some(Err(error)) => {
-                            eprintln!("{}", error);
+                            Log::handle_error(&error);
                             break;
                         }
                         None => {
@@ -61,7 +62,7 @@ impl ImageSourceFolder {
                     }
                 },
                 Err(error) => {
-                    eprintln!("{}", error);
+                    Log::handle_error(&error);
                     return Err(error);
                 }
             }
