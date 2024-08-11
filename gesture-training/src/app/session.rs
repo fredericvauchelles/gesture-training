@@ -80,7 +80,7 @@ impl AppSession {
 
     pub fn reset_time_left(&self) -> anyhow::Result<()> {
         let config = self.config.as_ref().ok_or(anyhow::anyhow!(""))?;
-        let mut timer_data_ref = self.timer_data.try_borrow_mut()?;
+        let mut timer_data_ref = self.timer_data.borrow_mut();
         timer_data_ref.time_left = config.image_duration;
         timer_data_ref.last_tick_date = Instant::now();
 
@@ -147,7 +147,7 @@ impl AppSession {
     ) -> anyhow::Result<()> {
         let config = self.config.as_ref().ok_or(anyhow::anyhow!(""))?;
         {
-            let mut timer_data = self.timer_data.try_borrow_mut()?;
+            let mut timer_data = self.timer_data.borrow_mut();
 
             timer_data.last_tick_date = Instant::now();
             timer_data.time_left = config.image_duration;
@@ -162,7 +162,7 @@ impl AppSession {
                     fn execute(timer_data: &Arc<RefCell<TimerData>>) -> anyhow::Result<Duration> {
                         // Update time data
                         let time_left = {
-                            let mut timer_data_ref = timer_data.try_borrow_mut()?;
+                            let mut timer_data_ref = timer_data.borrow_mut();
 
                             let now = Instant::now();
                             let delta = now - timer_data_ref.last_tick_date;

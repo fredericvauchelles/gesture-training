@@ -49,7 +49,7 @@ impl AppCallback {
             callback: &AppCallback,
             uuid: Uuid,
         ) -> anyhow::Result<()> {
-            let backend = callback.backend.try_borrow()?;
+            let backend = callback.backend.borrow();
             let image_source = backend
                 .image_sources()
                 .get_image_source(uuid)
@@ -64,7 +64,7 @@ impl AppCallback {
                 ) -> anyhow::Result<()> {
                     let modifications = {
                         let check = image_source.check_source().await;
-                        let mut backend = callback.backend.try_borrow_mut()?;
+                        let mut backend = callback.backend.borrow_mut();
                         let image_source = backend
                             .image_sources_mut()
                             .get_image_source_mut(image_source.id())
@@ -75,7 +75,7 @@ impl AppCallback {
 
                     {
                         let mut ui = callback.ui.upgrade().ok_or(anyhow::anyhow!(""))?;
-                        let backend = callback.backend.try_borrow()?;
+                        let backend = callback.backend.borrow();
                         ui.update_with_backend_modifications(&backend, &modifications);
                     }
 
@@ -96,8 +96,8 @@ impl AppCallback {
         fn execute(this: &AppCallback, data: sg::EditSourceFolderData) -> anyhow::Result<()> {
             // Save in backend
             let modifications = {
-                let mut backend = this.backend.try_borrow_mut()?;
-                let app = this.app.try_borrow()?;
+                let mut backend = this.backend.borrow_mut();
+                let app = this.app.borrow();
                 let path = app.source_folder.edited_path().cloned();
                 backend
                     .image_sources_mut()
@@ -106,7 +106,7 @@ impl AppCallback {
 
             // propagate change to the ui
             if let Some(mut ui) = this.ui.upgrade() {
-                let backend = this.backend.try_borrow().map_err(anyhow::Error::from)?;
+                let backend = this.backend.borrow();
                 ui.update_with_backend_modifications(&backend, &modifications);
             }
 
@@ -129,12 +129,7 @@ impl AppCallback {
                 .map_err(anyhow::Error::from)
                 .and_then(|uuid| {
                     self.backend
-                        .try_borrow()
-                        .map_err(anyhow::Error::from)
-                        .map(|backend| (backend, uuid))
-                })
-                .and_then(|(backend, uuid)| {
-                    backend
+                        .borrow()
                         .image_sources()
                         .get_image_source(uuid)
                         .cloned()
@@ -146,40 +141,37 @@ impl AppCallback {
     }
 
     fn on_request_asked_path(&self) -> i32 {
-        if let Some(app) = self.handle_error(self.app.try_borrow().map_err(anyhow::Error::from)) {
-            let id = app.source_folder().next_request_ask_path_id() as i32;
-            let ui = self.ui.clone();
-            let app_clone = self.app.clone();
-            let future = async move {
-                if let Some(selection) = AsyncFileDialog::new().pick_folder().await {
-                    let mut app_clone_ref = app_clone.try_borrow_mut().unwrap();
-                    // try to store the selected path
-                    app_clone_ref
-                        .source_folder_mut()
-                        .set_edited_path(selection.path());
+        let app = self.app.borrow();
+        let id = app.source_folder().next_request_ask_path_id() as i32;
+        let ui = self.ui.clone();
+        let app_clone = self.app.clone();
+        let future = async move {
+            if let Some(selection) = AsyncFileDialog::new().pick_folder().await {
+                let mut app_clone_ref = app_clone.borrow_mut();
+                // try to store the selected path
+                app_clone_ref
+                    .source_folder_mut()
+                    .set_edited_path(selection.path());
 
-                    // update the ui
-                    ui.upgrade()
-                        .unwrap()
-                        .ui()
-                        .invoke_dispatch_edit_source_folder_request_asked_path_completed(
-                            id,
-                            selection.path().to_string_lossy().to_string().into(),
-                        );
-                }
-            };
+                // update the ui
+                ui.upgrade()
+                    .unwrap()
+                    .ui()
+                    .invoke_dispatch_edit_source_folder_request_asked_path_completed(
+                        id,
+                        selection.path().to_string_lossy().to_string().into(),
+                    );
+            }
+        };
 
-            self.handle_error(slint::spawn_local(future).map_err(anyhow::Error::from));
+        self.handle_error(slint::spawn_local(future).map_err(anyhow::Error::from));
 
-            id
-        } else {
-            -1
-        }
+        id
     }
 
     pub(crate) fn on_delete_source_id(&self, id: SharedString) {
         fn execute(this: &AppCallback, id: SharedString) -> anyhow::Result<()> {
-            let mut backend = this.backend.try_borrow_mut()?;
+            let mut backend = this.backend.borrow_mut();
             let uuid = Uuid::from_str(&id)?;
 
             if let Some(image_source) = backend.image_sources_mut().remove_image_source(uuid) {
@@ -199,7 +191,7 @@ impl AppCallback {
             let uuid = Uuid::from_str(&id)?;
 
             let modification = {
-                let mut backend = callback.backend.try_borrow_mut()?;
+                let mut backend = callback.backend.borrow_mut();
                 if is_used {
                     backend.add_image_source_to_session(uuid)
                 } else {
@@ -209,7 +201,7 @@ impl AppCallback {
 
             if !modification.is_empty() {
                 let mut ui = callback.ui.upgrade().ok_or(anyhow::anyhow!(""))?;
-                let backend = callback.backend.try_borrow()?;
+                let backend = callback.backend.borrow();
                 ui.update_with_backend_modifications(&backend, &modification);
             }
 
@@ -227,7 +219,7 @@ impl AppCallback {
             };
 
             let image_sources = {
-                let backend_ref = callback.backend.try_borrow()?;
+                let backend_ref = callback.backend.borrow();
                 backend_ref
                     .used_image_source()
                     .into_iter()
@@ -244,7 +236,7 @@ impl AppCallback {
                 let callback_clone = callback.clone();
                 let callback_clone2 = callback.clone();
                 let callback_clone3 = callback.clone();
-                let mut app_ref = callback.app.try_borrow_mut()?;
+                let mut app_ref = callback.app.borrow_mut();
                 app_ref.session.start_session(
                     &session_config,
                     move |time_left| {
@@ -340,11 +332,7 @@ impl App {
             ui.ui()
                 .global::<sg::EditSourceFolderNative>()
                 .on_clear_source_folder_editor(move || {
-                    if let Some(mut app_ref) = callback
-                        .handle_error(callback.app.try_borrow_mut().map_err(anyhow::Error::from))
-                    {
-                        app_ref.source_folder.clear_edited_path();
-                    }
+                    callback.app.borrow_mut().source_folder.clear_edited_path();
                 });
         }
 
@@ -386,13 +374,12 @@ impl App {
             ui.ui()
                 .global::<sg::SessionNative>()
                 .on_next_image(move || {
-                    callback.handle_error(
-                        callback
-                            .app
-                            .try_borrow_mut()
-                            .map_err(anyhow::Error::from)
-                            .and_then(|mut app| app.session.go_to_next_image()),
-                    );
+                    callback
+                        .app
+                        .borrow_mut()
+                        .session
+                        .go_to_next_image()
+                        .unwrap()
                 });
         }
 
@@ -401,9 +388,7 @@ impl App {
             ui.ui()
                 .global::<sg::SessionNative>()
                 .on_on_image_displayed(move || {
-                    callback.app.try_borrow().map_err(anyhow::Error::from).and_then(|app| {
-                        app.session.reset_time_left()
-                    }).unwrap();
+                    callback.app.borrow().session.reset_time_left().unwrap();
                 });
         }
 
