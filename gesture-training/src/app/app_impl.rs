@@ -1,6 +1,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::str::FromStr;
+use std::time::Duration;
 
 use rfd::AsyncFileDialog;
 pub use slint::ComponentHandle;
@@ -319,18 +320,16 @@ impl App {
                         let ui = callback.ui.upgrade().ok_or(anyhow::anyhow!(""))?;
                         let prepared_session_data = ui.ui().get_prepared_session_data();
                         ui.ui()
-                            .set_session_time_left(prepared_session_data.image_duration);
+                            .set_session_time_left(prepared_session_data.image_duration as f32);
 
                         let callback_clone = callback.clone();
-                        callback.app.session.session_timer.start(
-                            slint::TimerMode::Repeated,
-                            std::time::Duration::from_secs(1),
-                            move || {
+                        callback.app.session.start_timer(
+                            Duration::from_secs(prepared_session_data.image_duration as u64),
+                            move |time_left| {
                                 let ui = callback_clone.ui.upgrade().unwrap();
-                                ui.ui()
-                                    .set_session_time_left(ui.ui().get_session_time_left() - 1);
+                                ui.ui().set_session_time_left(time_left.as_secs_f32())
                             },
-                        );
+                        )?;
 
                         Ok(())
                     }

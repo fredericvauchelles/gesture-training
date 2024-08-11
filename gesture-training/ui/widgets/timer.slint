@@ -9,7 +9,7 @@ export global TimerNative {
 }
 
 export component Timer inherits Rectangle {
-    in property<int> time-left: 0;
+    in property<float> time-left: 0;
     in property<int> time-total: 90;
     in-out property<bool> is-playing: false;
 
@@ -40,6 +40,10 @@ export component Timer inherits Rectangle {
             height: CustomPalette.border;
             width: root.width * (1 - root.progress());
             background: Palette.foreground;
+
+            animate width {
+                duration: 200ms;
+            }
         }
     }
 
