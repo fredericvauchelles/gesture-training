@@ -27,8 +27,8 @@
     }
   ],
   "prepared-session-data": {
-    "image-count": 10,
-    "image-duration": 10,
+    "available-image-count": 10,
+    "image-duration": 30,
     "status": {
       "type": "Valid"
     }

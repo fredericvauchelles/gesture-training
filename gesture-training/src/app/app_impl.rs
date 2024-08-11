@@ -224,6 +224,24 @@ impl App {
         }
     }
 
+    /// Initialize data in backend and app
+    pub(super) fn initialize(
+        _app: &Rc<App>,
+        ui: &AppUi,
+        _backend: &RcBackend,
+    ) -> Result<(), slint::PlatformError> {
+        ui.ui().set_prepared_session_data(sg::PreparedSessionData {
+            available_image_count: 0,
+            image_duration: 30,
+            status: sg::StatusIconData {
+                r#type: sg::StatusIconType::Unknown,
+                error: SharedString::default(),
+            },
+        });
+
+        Ok(())
+    }
+
     pub(super) fn bind(
         app: &Rc<App>,
         ui: &AppUi,

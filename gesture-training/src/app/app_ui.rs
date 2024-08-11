@@ -220,7 +220,7 @@ impl AppUi {
                     });
 
                 self.ui.set_prepared_session_data(sg::PreparedSessionData {
-                    image_count: status.image_count() as i32,
+                    available_image_count: status.image_count() as i32,
                     status: status.status().into(),
                     image_duration: 30,
                 })

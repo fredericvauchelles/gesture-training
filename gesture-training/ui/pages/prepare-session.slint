@@ -10,7 +10,7 @@ import { ImageSourceType, PreparedSessionData } from "common.slint";
 
 export component PrepareSession inherits VerticalBox {
     in property<bool> enabled: false;
-    in property<PreparedSessionData> prepared-session-data;
+    in-out property<PreparedSessionData> prepared-session-data;
     in property<[ImageSourceSelectorEntryData]> image-source-selector-datas;
 
     callback start-session;
@@ -107,7 +107,7 @@ export component PrepareSession inherits VerticalBox {
 
                 border-top-right: true;
                 height: CustomPalette.preferred-field-height;
-                selected-value: prepared-session-data.image-count;
+                selected-value: 5;
                 datas: [
                     {value: 5, display: "5"},
                     {value: 10, display: "10"},
@@ -150,6 +150,10 @@ export component PrepareSession inherits VerticalBox {
                     {value: 600, display: "10'"}, 
                     {value: 1200, display: "20'"}, 
                 ]; 
+
+                selected-value-changed(value) => {
+                    prepared-session-data.image-duration = value;
+                }
             }
         }
     }
@@ -160,7 +164,7 @@ export component PrepareSession inherits VerticalBox {
         Button {
             enabled: root.enabled && prepared-session-data.status.type == StatusIconType.Valid;
 
-            text: "Start (" + prepared-session-data.image-count + ")";
+            text: "Start (" + prepared-session-data.available-image-count + ")";
             clicked => { start-session(); }
         }
 

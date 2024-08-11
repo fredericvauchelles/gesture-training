@@ -89,6 +89,8 @@ export component RadioBox inherits HorizontalBox {
     spacing: 0;
     padding: 0;
 
+    callback selected-value-changed(int);
+
     for data[index] in datas : RadioButton {
         enabled <=> root.enabled;
 
@@ -102,7 +104,8 @@ export component RadioBox inherits HorizontalBox {
         selected: data.value == selected-value;
         text: data.display;
         clicked => {
-            root.selected-value = data.value;
+            selected-value = data.value;
+            selected-value-changed(selected-value);
         }
-    } 
+    }
 }
