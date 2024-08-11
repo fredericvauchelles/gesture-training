@@ -15,11 +15,11 @@ impl SessionBackend {
         self.used_sources.iter()
     }
 
-    pub(super) fn add_image_source(&mut self, uuid: Uuid) -> bool {
+    pub(crate) fn add_image_source(&mut self, uuid: Uuid) -> bool {
         self.used_sources.insert(uuid)
     }
 
-    pub(super) fn remove_image_source(&mut self, uuid: Uuid) -> bool {
+    pub(crate) fn remove_image_source(&mut self, uuid: Uuid) -> bool {
         self.used_sources.remove(&uuid)
     }
 }

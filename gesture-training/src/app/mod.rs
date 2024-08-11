@@ -2,16 +2,15 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use crate::app::app_ui::AppUi;
+use crate::app::image_source::folder::AppSourceFolder;
 use crate::app::session::AppSession;
-use crate::app::source_folder::AppSourceFolder;
 
-mod app_impl;
+mod app_callback;
 mod app_ui;
 mod backend;
 mod image_source;
 mod log;
 mod session;
-pub mod source_folder;
 
 pub struct App {
     source_folder: AppSourceFolder,

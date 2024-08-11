@@ -5,10 +5,9 @@ use async_std::prelude::StreamExt;
 use slint::{Image, SharedString};
 use uuid::Uuid;
 
+use crate::app::image_source::{ImageSource, ImageSourceCheck, ImageSourceStatus, ImageSourceTrait};
 use crate::app::log::Log;
 use crate::sg;
-
-use super::{ImageSource, ImageSourceCheck, ImageSourceStatus, ImageSourceTrait};
 
 #[derive(Debug, Clone)]
 pub struct ImageSourceFolder {

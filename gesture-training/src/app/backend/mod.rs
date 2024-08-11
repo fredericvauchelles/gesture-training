@@ -1,16 +1,13 @@
 use uuid::Uuid;
 
-pub use image_sources::ImageSourceBackend;
 pub use modifications::{AppBackendModifications, ImageSourceModification, SessionModification};
-
-use crate::app::backend::session::SessionBackend;
+use crate::app::image_source::folder::ImageSourceBackend;
+use crate::app::session::SessionBackend;
 use crate::sg;
 
 use super::image_source::{ImageSource, ImageSourceTrait};
 
-mod image_sources;
 mod modifications;
-mod session;
 
 pub struct AppBackend {
     image_sources: ImageSourceBackend,
@@ -33,9 +30,6 @@ impl AppBackend {
 
     pub fn session(&self) -> &SessionBackend {
         &self.session
-    }
-    pub fn session_mut(&mut self) -> &mut SessionBackend {
-        &mut self.session
     }
 
     pub fn add_image_source_to_session(&mut self, uuid: Uuid) -> AppBackendModifications {
