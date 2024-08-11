@@ -42,6 +42,8 @@ pub struct AppSession {
 
     config: Option<AppSessionConfiguration>,
     image_history: Vec<ImageCoordinate>,
+    /// Index from the end of the history vector
+    image_history_index: usize,
     session_callbacks: AppSessionCallbacks,
 }
 
@@ -53,6 +55,7 @@ impl AppSession {
             config: None,
             image_history: Vec::default(),
             session_callbacks: AppSessionCallbacks::default(),
+            image_history_index: 0,
         }
     }
 
@@ -87,42 +90,71 @@ impl AppSession {
         Ok(())
     }
 
-    pub fn go_to_next_image(&mut self) -> anyhow::Result<()> {
-        if let Ok(next) = self.session_next_image_coordinates() {
-            let config = self.config.as_ref().ok_or(anyhow::anyhow!(""))?.clone();
-            let image_source = config.image_sources[next.image_source_index].clone();
-            let timer = self.timer_tick.clone();
+    fn go_to_image(&self, image_coordinate: ImageCoordinate) -> anyhow::Result<()> {
+        let config = self.config.as_ref().ok_or(anyhow::anyhow!(""))?.clone();
+        let image_source = config.image_sources[image_coordinate.image_source_index].clone();
+        let timer = self.timer_tick.clone();
 
-            timer.stop();
-            if let Some(callback) = self.session_callbacks.on_start_image_load.as_ref() {
-                callback();
-            }
-            let on_image_loaded = self.session_callbacks.on_image_loaded.clone();
-            slint::spawn_local(async move {
-                match image_source.load_image(next.image_index).await {
-                    Ok(image) => {
-                        timer.restart();
-                        if let Some(callback) = on_image_loaded {
-                            let callback = callback.clone();
-                            callback(image);
-                        }
-                    }
-                    Err(error) => {
-                        Log::handle_error(&error);
+        timer.stop();
+        if let Some(callback) = self.session_callbacks.on_start_image_load.as_ref() {
+            callback();
+        }
+        let on_image_loaded = self.session_callbacks.on_image_loaded.clone();
+        slint::spawn_local(async move {
+            match image_source.load_image(image_coordinate.image_index).await {
+                Ok(image) => {
+                    timer.restart();
+                    if let Some(callback) = on_image_loaded {
+                        let callback = callback.clone();
+                        callback(image);
                     }
                 }
-            })?;
+                Err(error) => {
+                    Log::handle_error(&error);
+                }
+            }
+        })?;
+
+        Ok(())
+    }
+
+    pub fn go_to_previous_image(&mut self) -> anyhow::Result<()> {
+        if let Some(image_coordinate) = self.session_previous_image_coordinates() {
+            self.go_to_image(image_coordinate)?;
+        }
+
+        Ok(())
+    }
+
+    pub fn go_to_next_image(&mut self) -> anyhow::Result<()> {
+        if let Ok(image_coordinate) = self.session_next_image_coordinates() {
+            self.go_to_image(image_coordinate)?;
         }
 
         Ok(())
     }
 
     fn session_next_image_coordinates(&mut self) -> anyhow::Result<ImageCoordinate> {
-        if let Some(image_coordinate) = self.find_next_image_coordinates() {
-            self.image_history.push(image_coordinate);
-            Ok(image_coordinate)
+        if self.image_history_index == 0 {
+            if let Some(image_coordinate) = self.find_next_image_coordinates() {
+                self.image_history.push(image_coordinate);
+                Ok(image_coordinate)
+            } else {
+                Err(anyhow::anyhow!(""))
+            }
+        }
+         else {
+             self.image_history_index = self.image_history_index - 1;
+             Ok(self.image_history[self.image_history.len() - 1 - self.image_history_index])
+         }
+    }
+
+    fn session_previous_image_coordinates(&mut self) -> Option<ImageCoordinate> {
+        if self.image_history_index < self.image_history.len() - 1 {
+            self.image_history_index = self.image_history_index + 1;
+            Some(self.image_history[self.image_history.len() - 1 - self.image_history_index])
         } else {
-            Err(anyhow::anyhow!(""))
+            None
         }
     }
 

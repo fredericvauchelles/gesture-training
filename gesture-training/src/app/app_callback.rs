@@ -387,6 +387,20 @@ impl App {
             let callback = app_callback.clone();
             ui.ui()
                 .global::<sg::SessionNative>()
+                .on_previous_image(move || {
+                    callback
+                        .app
+                        .borrow_mut()
+                        .session
+                        .go_to_previous_image()
+                        .unwrap()
+                });
+        }
+
+        {
+            let callback = app_callback.clone();
+            ui.ui()
+                .global::<sg::SessionNative>()
                 .on_on_image_displayed(move || {
                     callback.app.borrow().session.reset_time_left().unwrap();
                 });
