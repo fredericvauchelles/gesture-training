@@ -28,12 +28,20 @@ impl AppSessionConfiguration {
     }
 }
 
+#[derive(Default)]
+struct AppSessionCallbacks {
+    on_timer_tick: Option<Arc<dyn Fn(Duration) + 'static>>,
+    on_start_image_load: Option<Arc<dyn Fn() + 'static>>,
+    on_image_loaded: Option<Arc<dyn Fn(slint::Image) + 'static>>,
+}
+
 pub struct AppSession {
     timer_tick: Arc<Timer>,
     timer_data: Arc<RefCell<TimerData>>,
 
     config: Option<AppSessionConfiguration>,
     image_history: Vec<ImageCoordinate>,
+    session_callbacks: AppSessionCallbacks,
 }
 
 impl AppSession {
@@ -43,35 +51,52 @@ impl AppSession {
             timer_data: Arc::new(RefCell::new(TimerData::default())),
             config: None,
             image_history: Vec::default(),
+            session_callbacks: AppSessionCallbacks::default(),
         }
     }
 
     pub fn start_session(
         &mut self,
         config: &AppSessionConfiguration,
-        on_timer_tick: impl FnMut(Duration) + 'static,
-        mut on_loading_image: impl FnMut() + 'static,
-        mut on_image_loaded: impl FnMut(slint::Image) + 'static,
+        on_timer_tick: impl Fn(Duration) + Clone + 'static,
+        on_loading_image: impl Fn() + 'static,
+        on_image_loaded: impl Fn(slint::Image) + 'static,
     ) -> anyhow::Result<()> {
         {
             self.config = Some(config.clone());
         }
 
+        self.session_callbacks.on_timer_tick = Some(Arc::new(on_timer_tick.clone()));
+        self.session_callbacks.on_start_image_load = Some(Arc::new(on_loading_image));
+        self.session_callbacks.on_image_loaded = Some(Arc::new(on_image_loaded));
+
         self.configure_timer(on_timer_tick)?;
 
+        self.go_to_next_image()?;
+
+        Ok(())
+    }
+    
+    fn go_to_next_image(&mut self) -> anyhow::Result<()> {
         if let Ok(next) = self.session_next_image_coordinates() {
             let config = self.config.as_ref().ok_or(anyhow::anyhow!(""))?.clone();
             let image_source = config.image_sources[next.image_source_index].clone();
             let timer = self.timer_tick.clone();
-            on_loading_image();
+
+            if let Some(callback) = self.session_callbacks.on_start_image_load.as_ref() {
+                callback();
+            }
+            let on_image_loaded = self.session_callbacks.on_image_loaded.clone();
             slint::spawn_local(async move {
                 if let Ok(image) = image_source.load_image(next.image_index).await {
                     timer.restart();
-                    on_image_loaded(image);
+                    if let Some(callback) = on_image_loaded {
+                        callback(image);
+                    }
                 }
             })?;
         }
-
+        
         Ok(())
     }
 
