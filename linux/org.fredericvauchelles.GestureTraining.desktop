@@ -1,6 +1,6 @@
 [Desktop Entry]
 Name=Gesture Training
-Exec=gesture_training
+Exec=gesture-training
 Icon=org.fredericvauchelles.GestureTraining
 Version=1.0
 Type=Application

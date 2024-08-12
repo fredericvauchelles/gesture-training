@@ -3,7 +3,7 @@
 cd /data || exit
 
 echo "Building Binary"
-cargo build --release --package gesture_training
+cargo build --release --package gesture-training
 
 echo "Building cargo-sources.json"
 python3 /flatpak-cargo-generator.py Cargo.lock -o target/cargo-sources.json

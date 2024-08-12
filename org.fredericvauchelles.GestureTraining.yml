@@ -18,7 +18,7 @@ modules:
       env:
         CARGO_HOME: run/build/gesture_training/cargo
     build-commands:
-      - install -Dm755 ./target/release/gesture_training -t /app/bin
+      - install -Dm755 ./target/release/gesture-training -t /app/bin
       - install -D ./linux/org.fredericvauchelles.GestureTraining.desktop -t /app/share/applications/
       - install -D ./icons/org.fredericvauchelles.GestureTraining.svg -t /app/share/icons/hicolor/scalable/apps/
     sources:
