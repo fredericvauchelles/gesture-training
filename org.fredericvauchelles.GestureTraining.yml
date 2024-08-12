@@ -4,19 +4,21 @@ runtime-version: '23.08'
 sdk: org.freedesktop.Sdk
 sdk-extensions:
   - org.freedesktop.Sdk.Extension.rust-stable
-command: gesture_training
+command: gesture-training
 finish-args:
   - --socket=wayland
   - --socket=x11
   - --socket=fallback-x11
+  - --share=network
+  - --filesystem=host
 build-options:
   append-path: /usr/lib/sdk/rust-stable/bin
 modules:
-  - name: gesture_training
+  - name: gesture-training
     buildsystem: simple
     build-options:
       env:
-        CARGO_HOME: run/build/gesture_training/cargo
+        CARGO_HOME: run/build/gesture-training/cargo
     build-commands:
       - install -Dm755 ./target/release/gesture-training -t /app/bin
       - install -D ./linux/org.fredericvauchelles.GestureTraining.desktop -t /app/share/applications/
