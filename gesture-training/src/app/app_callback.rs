@@ -9,7 +9,7 @@ use slint::SharedString;
 use uuid::Uuid;
 
 use crate::app::app_ui::WeakAppUi;
-use crate::app::backend::ImageSourceModification;
+use crate::app::backend::{AppBackendModifications, ImageSourceModification};
 use crate::app::image_source::{ImageSource, ImageSourceTrait};
 use crate::app::log::Log;
 use crate::app::session::AppSessionConfiguration;
@@ -42,6 +42,15 @@ impl AppCallback {
                 None
             }
         }
+    }
+
+    fn trigger_image_source_check_from_modifications(&self, modifications: &AppBackendModifications) {
+        let changed_ids = modifications
+            .image_sources()
+            .iter()
+            .filter(|source| !matches!(source, ImageSourceModification::Deleted(_)))
+            .map(|source| source.id());
+        self.trigger_image_source_check(changed_ids);
     }
 
     fn trigger_image_source_check(&self, image_source_ids: impl IntoIterator<Item=Uuid>) {
@@ -115,12 +124,7 @@ impl AppCallback {
             }
 
             // Trigger a check of the image source
-            let changed_ids = modifications
-                .image_sources()
-                .iter()
-                .filter(|source| !matches!(source, ImageSourceModification::Deleted(_)))
-                .map(|source| source.id());
-            this.trigger_image_source_check(changed_ids);
+            this.trigger_image_source_check_from_modifications(&modifications);
 
             Ok(())
         }
@@ -284,10 +288,12 @@ impl App {
 
     /// Initialize data in backend and app
     pub(super) fn initialize(
-        _app: &Rc<RefCell<App>>,
+        app: &Rc<RefCell<App>>,
         ui: &mut AppUi,
         backend: &RcBackend,
     ) -> Result<(), anyhow::Error> {
+        let app_callback = AppCallback::new(app, &ui.as_weak(), backend);
+
         ui.ui().set_prepared_session_data(sg::PreparedSessionData {
             available_image_count: 0,
             image_duration: 30,
@@ -298,9 +304,13 @@ impl App {
             },
         });
 
-        let mut backend_ref = backend.borrow_mut();
-        let modifications = backend_ref.update_from_persistence()?;
-        ui.update_with_backend_modifications(&mut backend_ref, &modifications);
+        let modifications = {
+            let mut backend_ref = backend.borrow_mut();
+            let modifications = backend_ref.update_from_persistence()?;
+            ui.update_with_backend_modifications(&mut backend_ref, &modifications);
+            modifications
+        };
+        app_callback.trigger_image_source_check_from_modifications(&modifications);
 
         Ok(())
     }

@@ -15,6 +15,7 @@ pub struct ImageSourceFolder {
     id: Uuid,
     pub(crate) name: String,
     pub(crate) path: PathBuf,
+    #[serde(skip)]
     check: ImageSourceCheck,
 }
 
