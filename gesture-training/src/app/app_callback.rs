@@ -1,4 +1,5 @@
 use std::cell::RefCell;
+use std::path::PathBuf;
 use std::rc::Rc;
 use std::str::FromStr;
 use std::time::Duration;
@@ -12,7 +13,7 @@ use crate::app::backend::{AppBackendModifications, ImageSourceModification};
 use crate::app::image_source::{ImageSource, ImageSourceTrait};
 use crate::app::log::Log;
 use crate::app::session::AppSessionConfiguration;
-use crate::app::{android, App, AppUi};
+use crate::app::{App, AppUi};
 use crate::sg;
 
 type RcBackend = Rc<RefCell<super::backend::AppBackend>>;
@@ -106,7 +107,13 @@ impl AppCallback {
             let modifications = {
                 let mut backend = this.backend.borrow_mut();
                 let app = this.app.borrow();
+
+                // enable-path-picking
+                #[cfg(any(target_os = "linux", target_os = "windows", target_os = "macos"))]
                 let path = app.source_folder.edited_path().cloned();
+                #[cfg(target_os = "android")]
+                let path = Some(PathBuf::from(data.path.as_str()));
+
                 let modifications = backend
                     .image_sources_mut()
                     .add_or_update_image_source_from_edit_folder(&data, path)?;
@@ -313,10 +320,10 @@ impl App {
             },
         });
 
+        #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
+        ui.ui().set_enable_pick_path(true);
         #[cfg(target_os = "android")]
-        {
-            ui.ui().set_enable_pick_path(false);
-        }
+        ui.ui().set_enable_pick_path(false);
 
         let modifications = {
             let mut backend_ref = backend.borrow_mut();

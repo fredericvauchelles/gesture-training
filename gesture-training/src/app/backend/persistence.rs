@@ -43,7 +43,7 @@ impl AppPersistence {
     }
 
     fn state_file() -> PathBuf {
-        #[cfg(any(target_os = "linux", target_os = "window", target_os = "macos"))]
+        #[cfg(any(target_os = "linux", target_os = "windows", target_os = "macos"))]
         {
             let mut path = dirs::data_local_dir().unwrap_or_else(|| "~/.local/share".into());
             path.push("GestureTraining");
