@@ -8,7 +8,7 @@ export ANDROID_NDK_HOME=${ANDROID_SDK_HOME:-$(realpath ~/Android/Sdk/ndk)}
 
 cd "$ROOT_DIR"/gesture-training || exit
 
-x build --platform android --arch arm64
+# x build --platform android --arch arm64
 
-# x run --device adb:bedd7012 --arch arm64
+x run --device adb:bedd7012 --arch arm64
 # x build --device adb:bedd7012 --arch arm64

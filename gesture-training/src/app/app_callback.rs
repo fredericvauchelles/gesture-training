@@ -3,7 +3,6 @@ use std::rc::Rc;
 use std::str::FromStr;
 use std::time::Duration;
 
-use rfd::AsyncFileDialog;
 pub use slint::ComponentHandle;
 use slint::SharedString;
 use uuid::Uuid;
@@ -13,7 +12,7 @@ use crate::app::backend::{AppBackendModifications, ImageSourceModification};
 use crate::app::image_source::{ImageSource, ImageSourceTrait};
 use crate::app::log::Log;
 use crate::app::session::AppSessionConfiguration;
-use crate::app::{App, AppUi};
+use crate::app::{android, App, AppUi};
 use crate::sg;
 
 type RcBackend = Rc<RefCell<super::backend::AppBackend>>;
@@ -149,32 +148,43 @@ impl AppCallback {
     }
 
     fn on_request_asked_path(&self) -> i32 {
-        let app = self.app.borrow();
-        let id = app.source_folder().next_request_ask_path_id() as i32;
-        let ui = self.ui.clone();
-        let app_clone = self.app.clone();
-        let future = async move {
-            if let Some(selection) = AsyncFileDialog::new().pick_folder().await {
-                let mut app_clone_ref = app_clone.borrow_mut();
-                // try to store the selected path
-                app_clone_ref
-                    .source_folder_mut()
-                    .set_edited_path(selection.path());
+        #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
+        {
+            use rfd::AsyncFileDialog;
 
-                // update the ui
-                ui.upgrade()
-                    .unwrap()
-                    .ui()
-                    .invoke_dispatch_edit_source_folder_request_asked_path_completed(
-                        id,
-                        selection.path().to_string_lossy().to_string().into(),
-                    );
-            }
-        };
+            let app = self.app.borrow();
+            let id = app.source_folder().next_request_ask_path_id() as i32;
+            let ui = self.ui.clone();
+            let app_clone = self.app.clone();
+            let future = async move {
+                if let Some(selection) = AsyncFileDialog::new().pick_folder().await {
+                    let mut app_clone_ref = app_clone.borrow_mut();
+                    // try to store the selected path
+                    app_clone_ref
+                        .source_folder_mut()
+                        .set_edited_path(selection.path());
 
-        self.handle_error(slint::spawn_local(future).map_err(anyhow::Error::from));
+                    // update the ui
+                    ui.upgrade()
+                        .unwrap()
+                        .ui()
+                        .invoke_dispatch_edit_source_folder_request_asked_path_completed(
+                            id,
+                            selection.path().to_string_lossy().to_string().into(),
+                        );
+                }
+            };
 
-        id
+            self.handle_error(slint::spawn_local(future).map_err(anyhow::Error::from));
+
+            id
+        }
+
+        #[cfg(target_os = "android")]
+        {
+            android::Android::intent_open_file().unwrap();
+            1
+        }
     }
 
     pub(crate) fn on_delete_source_id(&self, id: SharedString) {

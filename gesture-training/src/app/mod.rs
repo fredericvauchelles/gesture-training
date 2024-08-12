@@ -11,6 +11,8 @@ mod backend;
 mod image_source;
 mod log;
 mod session;
+#[cfg(target_os = "android")]
+pub mod android;
 
 pub struct App {
     source_folder: AppSourceFolder,
