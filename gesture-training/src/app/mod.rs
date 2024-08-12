@@ -25,13 +25,14 @@ impl App {
         }
     }
 
-    pub fn run() -> Result<(), slint::PlatformError> {
-        let app_ui = AppUi::new()?;
+    pub fn run() -> anyhow::Result<()> {
+        let mut app_ui = AppUi::new()?;
         let app_backend = Rc::new(RefCell::new(backend::AppBackend::new()));
         let app = Rc::new(RefCell::new(App::new()));
-        App::initialize(&app, &app_ui, &app_backend)?;
+        App::initialize(&app, &mut app_ui, &app_backend)?;
         App::bind(&app, &app_ui, &app_backend)?;
-        app_ui.run()
+        
+        Ok(app_ui.run()?)
     }
 
     fn source_folder(&self) -> &AppSourceFolder {

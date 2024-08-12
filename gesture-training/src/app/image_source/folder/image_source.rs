@@ -4,12 +4,13 @@ use std::path::{Path, PathBuf};
 use async_std::prelude::StreamExt;
 use slint::{Image, SharedString};
 use uuid::Uuid;
+use serde::{Serialize, Deserialize};
 
 use crate::app::image_source::{ImageSource, ImageSourceCheck, ImageSourceStatus, ImageSourceTrait};
 use crate::app::log::Log;
 use crate::sg;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ImageSourceFolder {
     id: Uuid,
     pub(crate) name: String,

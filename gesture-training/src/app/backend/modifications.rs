@@ -27,6 +27,15 @@ impl From<ImageSourceModification> for AppBackendModifications {
     }
 }
 
+impl<T: IntoIterator<Item=ImageSourceModification>> From<T> for AppBackendModifications {
+    fn from(value: T) -> Self {
+        Self {
+            image_sources: value.into_iter().collect(),
+            session: Vec::new(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 pub enum SessionModification {
     AddedImageSource(Uuid),

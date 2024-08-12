@@ -3,12 +3,12 @@ use crate::app::App;
 mod app;
 mod sg;
 
-pub fn start_app() -> Result<(), slint::PlatformError> {
+pub fn start_app() -> anyhow::Result<()> {
     App::run()
 }
 
 #[allow(dead_code)]
-fn main() -> Result<(), slint::PlatformError> {
+fn main() -> anyhow::Result<()> {
     start_app()
 }
 

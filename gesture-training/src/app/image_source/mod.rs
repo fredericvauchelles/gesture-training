@@ -2,12 +2,16 @@ use slint::{Image, SharedString};
 use uuid::Uuid;
 
 use folder::ImageSourceFolder;
+use serde::{Serialize, Deserialize};
+
+pub use backend::ImageSourceBackend;
 
 use crate::sg;
 
 pub mod folder;
+mod backend;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ImageSourceStatus {
     Unknown,
     Valid,
@@ -20,7 +24,7 @@ impl Default for ImageSourceStatus {
     }
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ImageSourceCheck {
     image_count: usize,
     status: ImageSourceStatus,
@@ -88,7 +92,7 @@ pub trait ImageSourceTrait {
     async fn load_image(&self, index: usize) -> anyhow::Result<slint::Image>;
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ImageSource {
     Folder(ImageSourceFolder),
 }

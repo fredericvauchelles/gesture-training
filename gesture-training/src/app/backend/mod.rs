@@ -1,13 +1,16 @@
 use uuid::Uuid;
 
 pub use modifications::{AppBackendModifications, ImageSourceModification, SessionModification};
-use crate::app::image_source::folder::ImageSourceBackend;
+pub use persistence::AppPersistentState;
+use crate::app::image_source::ImageSourceBackend;
 use crate::app::session::SessionBackend;
 use crate::sg;
 
-use super::image_source::{ImageSource, ImageSourceTrait};
+use super::image_source::{ImageSource};
+use crate::app::image_source::ImageSourceTrait;
 
 mod modifications;
+mod persistence;
 
 pub struct AppBackend {
     image_sources: ImageSourceBackend,
@@ -30,6 +33,22 @@ impl AppBackend {
 
     pub fn session(&self) -> &SessionBackend {
         &self.session
+    }
+
+    pub fn update_from_persistence(&mut self) -> anyhow::Result<AppBackendModifications> {
+        if let Some(state) = persistence::AppPersistence::load_state()? {
+            let modifications = self.image_sources.update_from_state(&state)?;
+            Ok(modifications)
+        }
+        else {
+            Ok(AppBackendModifications::default())
+        }
+    }
+
+    pub fn save_to_persistence(&mut self) -> anyhow::Result<()> {
+        persistence::AppPersistence::save_state(self.image_sources.image_sources())?;
+
+        Ok(())
     }
 
     pub fn add_image_source_to_session(&mut self, uuid: Uuid) -> AppBackendModifications {
@@ -64,7 +83,7 @@ impl AppBackend {
                 status: image_source.check().status().into(),
             })
     }
-    
+
     pub fn used_image_source<'a>(&'a self) -> impl IntoIterator<Item=ImageSource> + 'a {
         self.session().image_source_used().into_iter().filter_map(|uuid| self.image_sources().get_image_source(*uuid)).cloned()
     }

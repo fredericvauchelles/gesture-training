@@ -8,12 +8,12 @@ pub use slint::ComponentHandle;
 use slint::SharedString;
 use uuid::Uuid;
 
-use crate::app::{App, AppUi};
 use crate::app::app_ui::WeakAppUi;
 use crate::app::backend::ImageSourceModification;
 use crate::app::image_source::{ImageSource, ImageSourceTrait};
 use crate::app::log::Log;
 use crate::app::session::AppSessionConfiguration;
+use crate::app::{App, AppUi};
 use crate::sg;
 
 type RcBackend = Rc<RefCell<super::backend::AppBackend>>;
@@ -44,7 +44,7 @@ impl AppCallback {
         }
     }
 
-    fn trigger_image_source_check(&self, image_source_ids: impl IntoIterator<Item = Uuid>) {
+    fn trigger_image_source_check(&self, image_source_ids: impl IntoIterator<Item=Uuid>) {
         fn trigger_image_source_check_for_uuid(
             callback: &AppCallback,
             uuid: Uuid,
@@ -99,9 +99,13 @@ impl AppCallback {
                 let mut backend = this.backend.borrow_mut();
                 let app = this.app.borrow();
                 let path = app.source_folder.edited_path().cloned();
-                backend
+                let modifications = backend
                     .image_sources_mut()
-                    .add_or_update_image_source_from_edit_folder(&data, path)?
+                    .add_or_update_image_source_from_edit_folder(&data, path)?;
+
+                backend.save_to_persistence()?;
+
+                modifications
             };
 
             // propagate change to the ui
@@ -136,8 +140,8 @@ impl AppCallback {
                         .ok_or(anyhow::anyhow!(""))
                 }),
         )
-        .and_then(|v| v.try_into().ok())
-        .unwrap_or_default()
+            .and_then(|v| v.try_into().ok())
+            .unwrap_or_default()
     }
 
     fn on_request_asked_path(&self) -> i32 {
@@ -281,9 +285,9 @@ impl App {
     /// Initialize data in backend and app
     pub(super) fn initialize(
         _app: &Rc<RefCell<App>>,
-        ui: &AppUi,
-        _backend: &RcBackend,
-    ) -> Result<(), slint::PlatformError> {
+        ui: &mut AppUi,
+        backend: &RcBackend,
+    ) -> Result<(), anyhow::Error> {
         ui.ui().set_prepared_session_data(sg::PreparedSessionData {
             available_image_count: 0,
             image_duration: 30,
@@ -293,6 +297,10 @@ impl App {
                 error: SharedString::default(),
             },
         });
+
+        let mut backend_ref = backend.borrow_mut();
+        let modifications = backend_ref.update_from_persistence()?;
+        ui.update_with_backend_modifications(&mut backend_ref, &modifications);
 
         Ok(())
     }
@@ -380,7 +388,7 @@ impl App {
                         .session
                         .go_to_next_image()
                         .unwrap();
-                    
+
                     let backend = callback.backend.borrow();
                     callback.ui.upgrade().unwrap().update_with_backend_modifications(&backend, &modifications);
                 });

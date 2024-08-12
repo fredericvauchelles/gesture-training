@@ -221,7 +221,7 @@ impl AppUi {
                                 ImageSourceStatus::Error(new_error),
                             ) => ImageSourceCheck::new(
                                 acc.image_count(),
-                                ImageSourceStatus::Error(old_error.clone() + new_error),
+                                ImageSourceStatus::Error(old_error.clone() + &new_error),
                             ),
                             (_, ImageSourceStatus::Error(new_error)) => ImageSourceCheck::new(
                                 acc.image_count(),
