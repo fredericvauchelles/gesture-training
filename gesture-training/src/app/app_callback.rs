@@ -182,8 +182,7 @@ impl AppCallback {
 
         #[cfg(target_os = "android")]
         {
-            android::Android::intent_open_file().unwrap();
-            1
+            unreachable!()
         }
     }
 
@@ -313,6 +312,11 @@ impl App {
                 error: SharedString::default(),
             },
         });
+
+        #[cfg(target_os = "android")]
+        {
+            ui.ui().set_enable_pick_path(false);
+        }
 
         let modifications = {
             let mut backend_ref = backend.borrow_mut();

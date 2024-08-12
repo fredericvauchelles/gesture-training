@@ -1,4 +1,4 @@
-import { Palette, HorizontalBox, VerticalBox } from "std-widgets.slint";
+import { Palette, HorizontalBox, VerticalBox, LineEdit } from "std-widgets.slint";
 import { Button } from "button.slint";
 import { Label } from "label.slint";
 import { StatusIconData, StatusIconType } from "status-icon.slint";
@@ -31,6 +31,7 @@ export global EditSourceFolderNative {
 
 export component EditSourceFolder inherits VerticalBox {
     in property<bool> enabled: true;
+    in property<bool> enable-pick-path: true;
 
     callback on-add-or-save;
     callback cancel;
@@ -122,26 +123,35 @@ export component EditSourceFolder inherits VerticalBox {
                 border-color: Palette.background;
 
                 HorizontalBox {
+                    padding: 0;
+                    spacing: 0;
                     Text {
                         text: "Folder Path";
                         vertical-alignment: center;
                     }
-                    Text {
-                        horizontal-alignment: right;
-                        vertical-alignment: center;
-                        text: path;
-                        color: Palette.control-foreground.darker(25%);
+                    if !enable-pick-path: LineEdit {
+                        text <=> path;
+
+                        edited => { data.path = self.text; }
                     }
-                    Button {
-                        enabled <=> root.enabled;
+                    if enable-pick-path: HorizontalBox {
+                        Text {
+                            horizontal-alignment: right;
+                            vertical-alignment: center;
+                            text <=> path;
+                            color: Palette.control-foreground.darker(25%);
+                        }
+                        Button {
+                            enabled <=> root.enabled;
 
-                        icon: Icons.edit;
-                        width: CustomPalette.preferred-icon-size;
-                        height: CustomPalette.preferred-icon-size;
-                        padding: 0;
+                            icon: Icons.edit;
+                            width: CustomPalette.preferred-icon-size;
+                            height: CustomPalette.preferred-icon-size;
+                            padding: 0;
 
-                        clicked => {
-                            request-asked-path-id = EditSourceFolderNative.request-asked-path();
+                            clicked => {
+                                request-asked-path-id = EditSourceFolderNative.request-asked-path();
+                            }
                         }
                     }
                 }

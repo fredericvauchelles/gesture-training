@@ -1,5 +1,5 @@
 use jni::{JNIEnv, JavaVM};
-use jni::objects::{JObject, JValue};
+use jni::objects::{JObject, JString, JValue};
 
 pub struct Android {
 
@@ -26,19 +26,25 @@ impl Android {
             let action_view =
                 env.get_static_field(&intent_class, "ACTION_GET_CONTENT", "Ljava/lang/String;")?;
 
-            env.new_object(intent_class, "(Ljava/lang/String;)V", &[(&action_view).into()])?
-        };
+            let intent = env.new_object(intent_class, "(Ljava/lang/String;)V", &[(&action_view).into()])?;
 
-        let bundle = {
-            let bundle_class = env.find_class("android/os/Bundle")?;
-            env.new_object(bundle_class, "()V", &[])?
+            let setTypeArg = env.new_string("folder/*")?;
+
+            env.call_method(
+                &intent,
+                "setType",
+                "(Ljava/lang/String;)Landroid/content/Intent;",
+                &[(&setTypeArg).into()]
+            )?;
+
+            intent
         };
 
         env.call_method(
             activity,
-            "startActivityForResult",
-            "(Landroid/content/Intent;I;Landroid/os/Bundle;)V",
-            &[(&intent).into(), JValue::from(1), (&bundle).into()]
+            "startActivity",
+            "(Landroid/content/Intent;)V",
+            &[(&intent).into()]
         )?;
 
         Ok(())

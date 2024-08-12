@@ -30,6 +30,7 @@ export component AppWindow inherits Window {
     in property<PreparedSessionData> prepared-session-data <=> prepare-session.prepared-session-data;
     in property<float> session-time-left <=> session.time-left;
     in property<SessionWindowState> session-state: SessionWindowState.Completed;
+    in-out property<bool> enable-pick-path: true;
 
     /** Native */
     public function dispatch-edit-source-folder-request-asked-path-completed(id: int, new-path: string) {
@@ -85,6 +86,7 @@ export component AppWindow inherits Window {
             opacity: 0;
 
             edit-source-folder := EditSourceFolder {
+                enable-pick-path <=> enable-pick-path;
                 visible: false;
                 enabled: false;
                 opacity: 0;

@@ -15,7 +15,6 @@ fn main() -> anyhow::Result<()> {
 #[cfg(target_os = "android")]
 #[no_mangle]
 fn android_main(app: slint::android::AndroidApp) {
-    app::android::Android::intent_open_file().unwrap();
-    // slint::android::init(app).unwrap();
-    // start_app().unwrap()
+    slint::android::init(app).unwrap();
+    start_app().unwrap()
 }
