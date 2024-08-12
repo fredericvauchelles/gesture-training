@@ -43,9 +43,17 @@ impl AppPersistence {
     }
 
     fn state_file() -> PathBuf {
-        let mut path = dirs::data_local_dir().unwrap_or_else(|| "~/.local/share".into());
-        path.push("GestureTraining");
-        path.push("state.yml");
-        path
+        #[cfg(any(target_os = "linux", target_os = "window", target_os = "macos"))]
+        {
+            let mut path = dirs::data_local_dir().unwrap_or_else(|| "~/.local/share".into());
+            path.push("GestureTraining");
+            path.push("state.yml");
+            path
+        }
+
+        #[cfg(target_os = "android")]
+        {
+            PathBuf::from("/data/data/org.fredericvauchelles.gesture_training/state.yml")
+        }
     }
 }

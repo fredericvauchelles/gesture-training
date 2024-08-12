@@ -1,0 +1,4 @@
+# icon:
+android:
+  manifest:
+    package: org.fredericvauchelles.gesture_training

@@ -132,7 +132,8 @@ export component EditSourceFolder inherits VerticalBox {
                     if !enable-pick-path: LineEdit {
                         text <=> path;
 
-                        edited => { data.path = self.text; }
+                        edited(value) => { data.path = value; }
+                        accepted(value) => { data.path = value; }
                     }
                     if enable-pick-path: HorizontalBox {
                         Text {
