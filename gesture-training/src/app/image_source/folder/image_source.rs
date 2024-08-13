@@ -5,7 +5,7 @@ use async_std::prelude::StreamExt;
 use slint::{Image, SharedString};
 use uuid::Uuid;
 use serde::{Serialize, Deserialize};
-
+use crate::app::android_support::Android;
 use crate::app::image_source::{ImageSource, ImageSourceCheck, ImageSourceStatus, ImageSourceTrait};
 use crate::app::log::Log;
 use crate::sg;
@@ -30,25 +30,35 @@ impl ImageSourceFolder {
     }
 
     const IMAGE_EXTENSIONS: &'static [&'static str] = &["jpg", "jpeg", "png", "bmp"];
-    fn is_image_file(path: &async_std::path::Path) -> bool {
-        if let Some(extension) = path.extension().and_then(|ext| ext.to_str()) {
+    fn is_image_file(path: impl AsRef<Path>) -> bool {
+        if let Some(extension) = path.as_ref().extension().and_then(|ext| ext.to_str()) {
             Self::IMAGE_EXTENSIONS.contains(&extension)
         } else {
             false
         }
     }
-    async fn find_image_files_in_directory(path: &Path) -> io::Result<Vec<PathBuf>> {
+
+    async fn find_image_files_in_directory(path: &Path) -> anyhow::Result<Vec<PathBuf>> {
+        // #[cfg(target_os = "android")]
+        // Android::ask_permission()?;
+
         let mut paths = vec![path.to_path_buf()];
         let mut image_paths = Vec::new();
         while let Some(current_path) = paths.pop() {
+            println!("Scanning path ({}) for images", current_path.display());
+
             match async_std::fs::read_dir(current_path).await {
                 Ok(mut read_dir) => loop {
                     match read_dir.next().await {
                         Some(Ok(entry)) => {
+                            println!("Testing ({})", entry.path().display());
+
                             if Self::is_image_file(&entry.path()) {
+                                println!("Found image: ({})", entry.path().display());
                                 image_paths.push(entry.path().into())
                             } else if let Ok(entry_type) = entry.file_type().await {
                                 if entry_type.is_dir() {
+                                    println!("Found dir: ({})", entry.path().display());
                                     paths.push(entry.path().into())
                                 }
                             }
@@ -64,10 +74,11 @@ impl ImageSourceFolder {
                 },
                 Err(error) => {
                     Log::handle_error(&error);
-                    return Err(error);
+                    return Err(error.into());
                 }
             }
         }
+
         Ok(image_paths)
     }
 }
