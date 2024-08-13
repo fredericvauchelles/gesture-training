@@ -1,6 +1,5 @@
 use std::path::{Path, PathBuf};
 
-use async_std::prelude::StreamExt;
 use slint::{Image, SharedString};
 use uuid::Uuid;
 use serde::{Serialize, Deserialize};
