@@ -1,6 +1,28 @@
 use uuid::Uuid;
 use crate::sg;
 
+/// Describe modifications that occurred
+///
+/// Send this to the AppUi to update the UI accordingly
+#[derive(Debug, Default)]
+pub struct AppBackendModifications {
+    image_sources: Vec<ImageSourceModification>,
+    session: Vec<SessionModification>,
+}
+impl AppBackendModifications {
+    pub fn image_sources(&self) -> &[ImageSourceModification] {
+        &self.image_sources
+    }
+    pub fn session(&self) -> &[SessionModification] {
+        &self.session
+    }
+
+    pub(crate) fn is_empty(&self) -> bool {
+        self.image_sources.is_empty() && self.session.is_empty()
+    }
+}
+
+
 #[derive(Debug, Clone, Copy)]
 pub enum ImageSourceModification {
     Added(Uuid),
@@ -43,30 +65,11 @@ pub enum SessionModification {
     State(sg::SessionWindowState)
 }
 
-#[derive(Debug, Default)]
-pub struct AppBackendModifications {
-    image_sources: Vec<ImageSourceModification>,
-    session: Vec<SessionModification>,
-}
-
 impl From<SessionModification> for AppBackendModifications {
     fn from(value: SessionModification) -> Self {
         Self {
             image_sources: Vec::new(),
             session: vec![value],
         }
-    }
-}
-
-impl AppBackendModifications {
-    pub fn image_sources(&self) -> &[ImageSourceModification] {
-        &self.image_sources
-    }
-    pub fn session(&self) -> &[SessionModification] {
-        &self.session
-    }
-
-    pub(crate) fn is_empty(&self) -> bool {
-        self.image_sources.is_empty() && self.session.is_empty()
     }
 }

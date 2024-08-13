@@ -38,7 +38,7 @@ export component SessionWindow inherits Rectangle {
         SessionNative.on-image-displayed();
     }
 
-    if state == SessionWindowState.Running: Image {
+    if state == SessionWindowState.Running || state == SessionWindowState.Loading: Image {
         width: 100%;
         height: 100%;
         image-fit: contain;
@@ -46,18 +46,21 @@ export component SessionWindow inherits Rectangle {
     }
 
     if state == SessionWindowState.Loading: Image {
-        width: 100%;
-        height: 100%;
+        width: 150px;
+        height: 150px;
+        
+        rotation-angle: 360deg * (animation-tick()/1s);
         image-fit: contain;
-        source: @image-url("../images/loading.jpg");
+        source: @image-url("../widgets/icons/loading.svg");
     }
 
     if state == SessionWindowState.Completed: Image {
-        width: 100%;
-        height: 100%;
-        
+        width: 150px;
+        height: 150px;
+
         image-fit: contain;
-        source: @image-url("../images/loading.jpg");
+        colorize: Palette.foreground;
+        source: @image-url("../widgets/icons/check-square.svg");
     }
 
     Button {

@@ -12,6 +12,7 @@ use crate::app::image_source::ImageSourceTrait;
 mod modifications;
 mod persistence;
 
+/// Source of truth of the application logic
 pub struct AppBackend {
     image_sources: ImageSourceBackend,
     session: SessionBackend,

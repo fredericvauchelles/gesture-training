@@ -58,24 +58,14 @@ export component PrepareSession inherits VerticalBox {
             Button {
                 enabled <=> root.enabled;
 
-                border-radius: 0;
+                border-top-left-radius: 0;
+                border-top-right-radius: 0;
+                border-bottom-left-radius: 0;
 
                 icon: Icons.folder;
                 height: CustomPalette.preferred-field-height;
 
                 clicked => { open-add-image-source(ImageSourceType.Folder); }
-            }
-            Button {
-                enabled <=> root.enabled;
-
-                border-top-left-radius: 0;
-                border-top-right-radius: 0;
-                border-bottom-left-radius: 0;
-
-                icon: Icons.zip-file;
-                height: CustomPalette.preferred-field-height;
-
-                clicked => { open-add-image-source(ImageSourceType.Archive); }
             }
         }
         

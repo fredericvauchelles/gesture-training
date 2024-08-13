@@ -1,5 +1,5 @@
 use std::cell::RefCell;
-use std::path::PathBuf;
+
 use std::rc::Rc;
 use std::str::FromStr;
 use std::time::Duration;
@@ -18,6 +18,7 @@ use crate::sg;
 
 type RcBackend = Rc<RefCell<super::backend::AppBackend>>;
 
+/// Use this structure inside callbacks to perform logic
 #[derive(Clone)]
 struct AppCallback {
     app: Rc<RefCell<App>>,
@@ -91,13 +92,15 @@ impl AppCallback {
                     Ok(())
                 }
 
-                callback_clone.handle_error(execute(image_source, &callback_clone).await);
+                let error = execute(image_source, &callback_clone).await;
+                callback_clone.handle_error(error);
             })?;
             Ok(())
         }
 
         for uuid in image_source_ids.into_iter() {
-            self.handle_error(trigger_image_source_check_for_uuid(self, uuid));
+            let error = trigger_image_source_check_for_uuid(self, uuid);
+            self.handle_error(error);
         }
     }
 
@@ -112,7 +115,7 @@ impl AppCallback {
                 #[cfg(any(target_os = "linux", target_os = "windows", target_os = "macos"))]
                 let path = app.source_folder.edited_path().cloned();
                 #[cfg(target_os = "android")]
-                let path = Some(PathBuf::from(data.path.as_str()));
+                let path = Some(std::path::PathBuf::from(data.path.as_str()));
 
                 let modifications = backend
                     .image_sources_mut()
@@ -134,22 +137,23 @@ impl AppCallback {
 
             Ok(())
         }
-        self.handle_error(execute(self, data));
+        let error = execute(self, data);
+        self.handle_error(error);
     }
 
     fn get_folder_source_data_from_id(&self, id: SharedString) -> sg::EditSourceFolderData {
-        self.handle_error(
-            Uuid::from_str(&id)
-                .map_err(anyhow::Error::from)
-                .and_then(|uuid| {
-                    self.backend
-                        .borrow()
-                        .image_sources()
-                        .get_image_source(uuid)
-                        .cloned()
-                        .ok_or(anyhow::anyhow!(""))
-                }),
-        )
+        let result = Uuid::from_str(&id)
+            .map_err(anyhow::Error::from)
+            .and_then(|uuid| {
+                self.backend
+                    .borrow()
+                    .image_sources()
+                    .get_image_source(uuid)
+                    .cloned()
+                    .ok_or(anyhow::anyhow!(""))
+            });
+
+        self.handle_error(result)
             .and_then(|v| v.try_into().ok())
             .unwrap_or_default()
     }
@@ -182,7 +186,8 @@ impl AppCallback {
                 }
             };
 
-            self.handle_error(slint::spawn_local(future).map_err(anyhow::Error::from));
+            let error = slint::spawn_local(future).map_err(anyhow::Error::from);
+            self.handle_error(error);
 
             id
         }
@@ -207,7 +212,8 @@ impl AppCallback {
             Ok(())
         }
 
-        self.handle_error(execute(self, id));
+        let error = execute(self, id);
+        self.handle_error(error);
     }
 
     fn on_set_image_source_used(&self, id: SharedString, is_used: bool) {
@@ -232,7 +238,8 @@ impl AppCallback {
             Ok(())
         }
 
-        self.handle_error(execute(self, id, is_used));
+        let error = execute(self, id, is_used);
+        self.handle_error(error);
     }
 
     fn on_session_start(&self) {
@@ -287,7 +294,8 @@ impl AppCallback {
 
             Ok(())
         }
-        self.handle_error(execute(&self));
+        let error = execute(&self);
+        self.handle_error(error);
     }
 }
 

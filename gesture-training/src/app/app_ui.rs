@@ -11,8 +11,9 @@ use crate::app::image_source::{
 };
 use crate::sg;
 
+/// Contains strong references to arrays of models of the Slint UI
 #[derive(Clone)]
-pub(crate) struct AppUiBackend {
+struct AppUiBackend {
     image_source_selector_entries: Rc<VecModel<sg::ImageSourceSelectorEntryData>>,
 }
 
@@ -24,6 +25,7 @@ impl AppUiBackend {
     }
 }
 
+/// Weak structure that can be used inside callbacks
 #[derive(Clone)]
 pub struct WeakAppUi {
     ui: slint::Weak<sg::AppWindow>,
@@ -42,6 +44,10 @@ impl WeakAppUi {
     }
 }
 
+/// Contains all UI related pointers and data.
+///
+/// Use this to read or modify data used by the UI
+/// or to invoke callbacks on the ui
 pub struct AppUi {
     ui: sg::AppWindow,
     backend: Rc<AppUiBackend>,
@@ -75,6 +81,7 @@ impl AppUi {
         self.ui.run()
     }
 
+    /// Update the UI based on modification occurred in the backend
     pub fn update_with_backend_modifications(
         &mut self,
         backend: &AppBackend,

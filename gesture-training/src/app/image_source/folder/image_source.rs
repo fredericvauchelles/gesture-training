@@ -8,6 +8,8 @@ use crate::app::image_source::{ImageSource, ImageSourceCheck, ImageSourceStatus,
 use crate::app::log::Log;
 use crate::sg;
 
+/// Use a folder as an image source
+/// Will look for any file recursively inside the folder
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ImageSourceFolder {
     id: Uuid,
@@ -40,13 +42,13 @@ impl ImageSourceFolder {
         let mut paths = vec![path.to_path_buf()];
         let mut image_paths = Vec::new();
         while let Some(current_path) = paths.pop() {
-            match async_std::fs::read_dir(current_path).await {
+            match std::fs::read_dir(current_path) {
                 Ok(mut read_dir) => loop {
-                    match read_dir.next().await {
+                    match read_dir.next() {
                         Some(Ok(entry)) => {
                             if Self::is_image_file(&entry.path()) {
                                 image_paths.push(entry.path().into())
-                            } else if let Ok(entry_type) = entry.file_type().await {
+                            } else if let Ok(entry_type) = entry.file_type() {
                                 if entry_type.is_dir() {
                                     paths.push(entry.path().into())
                                 }

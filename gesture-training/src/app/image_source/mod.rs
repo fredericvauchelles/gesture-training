@@ -24,6 +24,7 @@ impl Default for ImageSourceStatus {
     }
 }
 
+/// Status of the last validity check on the source
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ImageSourceCheck {
     image_count: usize,
