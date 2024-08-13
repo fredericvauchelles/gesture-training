@@ -3,6 +3,5 @@ android:
   manifest:
     package: org.fredericvauchelles.gesture_training
     uses_permission:
-      - name: READ_EXTERNAL_STORAGE
-      - name: READ_MEDIA_IMAGES
-      - name: WRITE_EXTERNAL_STORAGE
+      - name: android.permission.READ_EXTERNAL_STORAGE
+      - name: android.permission.READ_MEDIA_IMAGES

@@ -1,4 +1,4 @@
-use crate::app::App;
+use crate::app::{App};
 
 mod app;
 mod sg;
@@ -15,6 +15,8 @@ fn main() -> anyhow::Result<()> {
 #[cfg(target_os = "android")]
 #[no_mangle]
 fn android_main(app: slint::android::AndroidApp) {
+    use crate::app::android_support::AndroidSupport;
+    app.request_file_permissions().unwrap();
     slint::android::init(app).unwrap();
     start_app().unwrap()
 }

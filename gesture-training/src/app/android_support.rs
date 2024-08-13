@@ -19,32 +19,18 @@ impl AndroidSupport for AndroidApp {
         let permission_class = env.find_class("android/Manifest$permission")?;
 
         let read_permission = env.get_static_field(&permission_class, "READ_EXTERNAL_STORAGE", "Ljava/lang/String;")?;
-        let write_permission = env.get_static_field(&permission_class, "WRITE_EXTERNAL_STORAGE", "Ljava/lang/String;")?;
-
-        // {
-        //     let string_class = env.find_class("java/lang/String")?;
-        //     let permissions_array = env.new_object_array(1, string_class, read_permission.l()?)?;
-        //     let activity_compat_class = env.find_class("android/support/v4/app/ActivityCompat")?;
-        //     env.call_static_method(
-        //         activity_compat_class,
-        //         "requestPermissions",
-        //         "(Landroid/app/activity;[L/java/lang/String];I;)V",
-        //         &[(&activity).into(), (&permissions_array).into(), JValue::from(0)]
-        //     )?;
-        // }
 
         {
             let string_class = env.find_class("java/lang/String")?;
             let default_string = env.new_string("")?;
-            let permissions_array = env.new_object_array(2, string_class, default_string)?;
+            let permissions_array = env.new_object_array(1, string_class, default_string)?;
             env.set_object_array_element(&permissions_array, 0, read_permission.l()?)?;
-            env.set_object_array_element(&permissions_array, 1, write_permission.l()?)?;
 
             env.call_method(
                 activity,
                 "requestPermissions",
-                "([Ljava/lang/String;II)V",
-                &[(&permissions_array).into(), JValue::from(0), JValue::from(0)]
+                "([Ljava/lang/String;I)V",
+                &[(&permissions_array).into(), JValue::from(0)]
             )?;
         }
         Ok(())

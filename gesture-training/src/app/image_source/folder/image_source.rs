@@ -1,11 +1,9 @@
-use std::io;
 use std::path::{Path, PathBuf};
 
 use async_std::prelude::StreamExt;
 use slint::{Image, SharedString};
 use uuid::Uuid;
 use serde::{Serialize, Deserialize};
-use crate::app::android_support::Android;
 use crate::app::image_source::{ImageSource, ImageSourceCheck, ImageSourceStatus, ImageSourceTrait};
 use crate::app::log::Log;
 use crate::sg;
@@ -39,9 +37,6 @@ impl ImageSourceFolder {
     }
 
     async fn find_image_files_in_directory(path: &Path) -> anyhow::Result<Vec<PathBuf>> {
-        // #[cfg(target_os = "android")]
-        // Android::ask_permission()?;
-
         let mut paths = vec![path.to_path_buf()];
         let mut image_paths = Vec::new();
         while let Some(current_path) = paths.pop() {
