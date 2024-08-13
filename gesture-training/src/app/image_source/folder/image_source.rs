@@ -40,20 +40,14 @@ impl ImageSourceFolder {
         let mut paths = vec![path.to_path_buf()];
         let mut image_paths = Vec::new();
         while let Some(current_path) = paths.pop() {
-            println!("Scanning path ({}) for images", current_path.display());
-
             match async_std::fs::read_dir(current_path).await {
                 Ok(mut read_dir) => loop {
                     match read_dir.next().await {
                         Some(Ok(entry)) => {
-                            println!("Testing ({})", entry.path().display());
-
                             if Self::is_image_file(&entry.path()) {
-                                println!("Found image: ({})", entry.path().display());
                                 image_paths.push(entry.path().into())
                             } else if let Ok(entry_type) = entry.file_type().await {
                                 if entry_type.is_dir() {
-                                    println!("Found dir: ({})", entry.path().display());
                                     paths.push(entry.path().into())
                                 }
                             }
