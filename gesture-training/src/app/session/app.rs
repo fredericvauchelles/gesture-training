@@ -73,6 +73,7 @@ impl AppSession {
         &mut self,
         config: &AppSessionConfiguration,
         on_timer_tick: impl Fn(Duration) + Clone + 'static,
+        on_timer_timeout: impl Fn() + 'static,
         on_loading_image: impl Fn() + 'static,
         on_image_loaded: impl Fn(slint::Image) + 'static,
     ) -> anyhow::Result<()> {
@@ -84,7 +85,7 @@ impl AppSession {
         self.session_callbacks.on_start_image_load = Some(Arc::new(on_loading_image));
         self.session_callbacks.on_image_loaded = Some(Arc::new(on_image_loaded));
 
-        self.configure_timer(on_timer_tick)?;
+        self.configure_timer(on_timer_tick, on_timer_timeout)?;
 
         self.go_to_next_image()?;
 
@@ -195,6 +196,7 @@ impl AppSession {
     fn configure_timer(
         &mut self,
         mut on_tick: impl FnMut(Duration) + 'static,
+        mut on_timeout: impl FnMut() + 'static,
     ) -> anyhow::Result<()> {
         let config = self.config.as_ref().ok_or(anyhow::anyhow!(""))?;
         {
@@ -205,26 +207,33 @@ impl AppSession {
         }
 
         if config.image_duration.is_zero() {
-            unimplemented!()
+            on_timeout();
         } else {
             let timer_data = self.timer_data.clone();
+            let timer_tick = self.timer_tick.clone();
             self.timer_tick
                 .start(TimerMode::Repeated, Duration::from_millis(200), move || {
-                    fn execute(timer_data: &Arc<RefCell<TimerData>>) -> anyhow::Result<Duration> {
-                        // Update time data
-                        let time_left = {
-                            let mut timer_data_ref = timer_data.borrow_mut();
+                    // Update time data
+                    let time_left = {
+                        let mut timer_data_ref = timer_data.borrow_mut();
 
-                            let now = Instant::now();
-                            let delta = now - timer_data_ref.last_tick_date;
-                            timer_data_ref.last_tick_date = now;
+                        let now = Instant::now();
+                        let delta = now - timer_data_ref.last_tick_date;
+                        timer_data_ref.last_tick_date = now;
+                        if timer_data_ref.time_left <= delta {
+                            let trigger_on_timeout = timer_tick.running();
+                            timer_data_ref.time_left = Duration::default();
+
+                            if trigger_on_timeout {
+                                timer_tick.stop();
+                                on_timeout();
+                            }
+                        } else {
                             timer_data_ref.time_left -= delta;
+                        }
 
-                            timer_data_ref.time_left
-                        };
-                        Ok(time_left)
-                    }
-                    let time_left = execute(&timer_data).unwrap();
+                        timer_data_ref.time_left
+                    };
 
                     on_tick(time_left);
                 });

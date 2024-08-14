@@ -267,6 +267,7 @@ impl AppCallback {
                 let callback_clone = callback.clone();
                 let callback_clone2 = callback.clone();
                 let callback_clone3 = callback.clone();
+                let callback_clone4 = callback.clone();
                 let mut app_ref = callback.app.borrow_mut();
                 app_ref.session.start_session(
                     &session_config,
@@ -275,11 +276,20 @@ impl AppCallback {
                         ui.ui().set_session_time_left(time_left.as_secs_f32())
                     },
                     move || {
-                        let ui = callback_clone2.ui.upgrade().unwrap();
+                        let modifications =  {let mut app = callback_clone2.app.borrow_mut();
+                        app.session.go_to_next_image().unwrap() };
+                        {
+                            let mut ui = callback_clone2.ui.upgrade().unwrap();
+                            let backend = callback_clone2.backend.borrow();
+                            ui.update_with_backend_modifications(&backend, &modifications);
+                        }
+                    },
+                    move || {
+                        let ui = callback_clone3.ui.upgrade().unwrap();
                         ui.ui().set_session_state(sg::SessionWindowState::Loading);
                     },
                     move |image| {
-                        let ui = callback_clone3.ui.upgrade().unwrap();
+                        let ui = callback_clone4.ui.upgrade().unwrap();
                         ui.ui().invoke_session_show_image(image);
                         ui.ui().set_session_state(sg::SessionWindowState::Running);
                     },
