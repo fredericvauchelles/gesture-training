@@ -1,3 +1,0 @@
-[submodule "tools/flatpak-builder-tools"]
-	path = tools/build/build-docker/flatpak-builder-tools
-	url = https://github.com/flatpak/flatpak-builder-tools.git
