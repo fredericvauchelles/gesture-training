@@ -1,2 +1,3 @@
 .flatpak-builder/
 target/
+/.idea/workspace.xml
