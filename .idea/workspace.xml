@@ -98,7 +98,6 @@
     <list>
       <item itemvalue="Cargo.Run" />
       <item itemvalue="Shell Script.Slint Viewer - App" />
-      <item itemvalue="Cargo.Run release" />
       <item itemvalue="Shell Script.Run Android" />
     </list>
   </component>
