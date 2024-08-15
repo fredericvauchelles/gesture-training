@@ -2,8 +2,13 @@
 name = "gesture-training"
 version = "0.1.0"
 edition = "2021"
+license = "GPL-3.0"
+authors = ["Frédéric Vauchelles <frederic.vauchelles@outlook.com>"]
+description = "Displays a random slideshow of images for artists to practice gesture drawing."
+homepage = "https://github.com/fredericvauchelles/gesture-training"
 
 [lib]
+name = "gesture_training_lib"
 crate-type = ["cdylib"]
 
 [[bin]]
