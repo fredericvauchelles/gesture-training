@@ -5,7 +5,10 @@ edition = "2021"
 license = "GPL-3.0"
 authors = ["Frédéric Vauchelles <frederic.vauchelles@outlook.com>"]
 description = "Displays a random slideshow of images for artists to practice gesture drawing."
+categories = ["multimedia::images", "games"]
+repository = "https://github.com/fredericvauchelles/gesture-training"
 homepage = "https://github.com/fredericvauchelles/gesture-training"
+documentation = "https://github.com/fredericvauchelles/gesture-training"
 
 [lib]
 name = "gesture_training_lib"
